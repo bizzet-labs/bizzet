@@ -1,0 +1,9 @@
+{
+  "name": "@bizzet",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0"
+  },
+  "packageManager": "pnpm@10.29.3"
+}
