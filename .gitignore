@@ -12,3 +12,6 @@ pnpm-debug.log*
 
 # Misc
 .DS_Store
+
+# Claude Code のエージェント用の作業ツリー
+.claude/worktrees/
