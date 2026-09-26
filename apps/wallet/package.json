@@ -18,6 +18,7 @@
     "@sveltejs/kit": "^2.63.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tailwindcss/vite": "^4.3.0",
+    "@types/qrcode": "^1.5.6",
     "cn": "^0.4.0",
     "svelte": "^5.56.1",
     "svelte-check": "^4.6.0",
@@ -33,6 +34,7 @@
     "@bizzet/db": "workspace:*",
     "ox": "^0.14.45",
     "permissionless": "^0.4.1",
+    "qrcode": "^1.5.4",
     "viem": "^2.56.9"
   }
 }

@@ -7,7 +7,10 @@ import './layout.css'
 let { children } = $props()
 
 const showBottomNav = $derived(
-  page.url.pathname !== '/login' && !page.url.pathname.startsWith('/invite'),
+  page.url.pathname !== '/login' &&
+    !page.url.pathname.startsWith('/invite') &&
+    // 値札からの支払いはログインなしで使う客向けのページのため、ウォレットのナビを出さない
+    !page.url.pathname.startsWith('/pay'),
 )
 </script>
 
