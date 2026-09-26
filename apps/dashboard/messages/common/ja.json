@@ -23,5 +23,6 @@
   "common_save": "保存",
   "common_error_invalid_input": "入力内容が正しくありません",
   "common_error_forbidden": "この操作を行う権限がありません",
-  "common_error_not_found": "見つかりません"
+  "common_error_not_found": "見つかりません",
+  "common_nav_account": "アカウント"
 }

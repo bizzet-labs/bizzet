@@ -3,6 +3,7 @@ import CheckIcon from '@lucide/svelte/icons/check'
 import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down'
 import LanguagesIcon from '@lucide/svelte/icons/languages'
 import LogOutIcon from '@lucide/svelte/icons/log-out'
+import UserRoundIcon from '@lucide/svelte/icons/user-round'
 import * as Avatar from '@/components/ui/avatar/index.js'
 import * as DropdownMenu from '@/components/ui/dropdown-menu/index.js'
 import * as Sidebar from '@/components/ui/sidebar/index.js'
@@ -72,6 +73,15 @@ let logoutForm: HTMLFormElement | undefined = $state()
 						{@render identity()}
 					</div>
 				</DropdownMenu.Label>
+				<DropdownMenu.Separator />
+				<DropdownMenu.Item>
+					{#snippet child({ props })}
+						<a href="/account" {...props}>
+							<UserRoundIcon />
+							{m.common_nav_account()}
+						</a>
+					{/snippet}
+				</DropdownMenu.Item>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Group>
 					<DropdownMenu.Label class="text-muted-foreground flex items-center gap-2 text-xs font-normal">
