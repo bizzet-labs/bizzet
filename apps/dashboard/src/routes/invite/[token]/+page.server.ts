@@ -98,6 +98,8 @@ export const actions: Actions = {
       await db.insert(members).values({
         id: randomUUID(),
         email,
+        name: invitation.name,
+        title: invitation.title,
         groupId: invitation.groupId,
         role: invitation.role,
         userId,
