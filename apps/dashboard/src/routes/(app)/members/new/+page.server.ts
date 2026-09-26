@@ -1,19 +1,13 @@
 import { randomBytes } from 'node:crypto'
 import { invitations } from '@bizzet/db'
-import { error, fail } from '@sveltejs/kit'
+import { fail } from '@sveltejs/kit'
 import { normalizeEmail } from '$lib/server/auth'
+import { requireOwner } from '$lib/server/guards'
 import type { Actions, PageServerLoad } from './$types'
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 const ROLES = ['owner', 'approver', 'viewer'] as const
 type Role = (typeof ROLES)[number]
-
-function requireOwner(member: App.Locals['member']) {
-  if (!member) error(401)
-  if (member.role !== 'owner')
-    error(403, 'メンバーの招待は Owner だけが行えます')
-  return member
-}
 
 export const load: PageServerLoad = async ({ locals }) => {
   requireOwner(locals.member)

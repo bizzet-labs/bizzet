@@ -7,7 +7,11 @@ import { enhance } from '$app/forms'
 let { data, form } = $props()
 </script>
 
-<main class="mx-auto flex max-w-md flex-col gap-6 p-6 md:p-10">
+<svelte:head>
+	<title>メンバーの招待 | bizzet</title>
+</svelte:head>
+
+<main class="flex max-w-md flex-col gap-6 p-6 pt-0">
 	<div class="flex flex-col gap-1">
 		<h1 class="text-2xl font-bold">メンバーを招待する</h1>
 		<p class="text-muted-foreground text-sm">
@@ -62,5 +66,5 @@ let { data, form } = $props()
 			</Field>
 		</FieldGroup>
 	</form>
-	<a href="/" class="text-sm underline underline-offset-4">ダッシュボードに戻る</a>
+	<a href="/members" class="text-sm underline underline-offset-4">メンバーの一覧に戻る</a>
 </main>
