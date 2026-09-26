@@ -1,10 +1,13 @@
 <script lang="ts">
 import BanknoteArrowDownIcon from '@lucide/svelte/icons/banknote-arrow-down'
 import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
+import PenLineIcon from '@lucide/svelte/icons/pen-line'
 import * as Card from '@/components/ui/card/index.js'
 
+// 承認は本部の Owner と Approver 向け。それ以外のメンバーには承認の画面でその旨を出す
 const menuItems = [
   { href: '/business/refund', label: '返金', icon: BanknoteArrowDownIcon },
+  { href: '/business/approvals', label: '承認', icon: PenLineIcon },
 ]
 </script>
 
