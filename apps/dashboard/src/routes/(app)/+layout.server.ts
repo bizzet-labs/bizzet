@@ -8,7 +8,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     where: eq(groups.id, member.groupId),
   })
   return {
-    member: { email: member.email, role: member.role },
+    member: { email: member.email, name: member.name, role: member.role },
     groupName: group?.name ?? '',
   }
 }

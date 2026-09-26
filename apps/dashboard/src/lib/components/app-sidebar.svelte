@@ -10,7 +10,11 @@ import { m } from '$lib/paraglide/messages.js'
 import NavMain, { type NavItem } from './nav-main.svelte'
 import NavUser from './nav-user.svelte'
 
-type Member = { email: string; role: 'owner' | 'approver' | 'viewer' }
+type Member = {
+  email: string
+  name: string | null
+  role: 'owner' | 'approver' | 'viewer'
+}
 
 let {
   ref = $bindable(null),

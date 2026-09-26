@@ -1,70 +1,114 @@
 <script lang="ts">
+import CircleCheckIcon from '@lucide/svelte/icons/circle-check'
+import * as Alert from '@/components/ui/alert/index.js'
 import { Button } from '@/components/ui/button/index.js'
+import * as Card from '@/components/ui/card/index.js'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field/index.js'
 import { Input } from '@/components/ui/input/index.js'
 import { enhance } from '$app/forms'
+import { m } from '$lib/paraglide/messages.js'
+import AssignmentFields from '../assignment-fields.svelte'
+import type { Role } from '../columns.js'
+import CopyLink from '../copy-link.svelte'
 
 let { data, form } = $props()
+
+// 本部を先頭に並べているため、既定では本部の Viewer を選ぶ
+const initialGroupId = () => data.groups[0]?.id ?? ''
+let groupId = $state(initialGroupId())
+let role = $state<Role>('viewer')
+let pending = $state(false)
+
+const values = $derived(form?.values)
+// 作った招待のリンク。失敗したときの form には含まれない
+const created = $derived(
+  form?.dashboardUrl && form.walletUrl
+    ? {
+        email: form.email ?? '',
+        dashboardUrl: form.dashboardUrl,
+        walletUrl: form.walletUrl,
+      }
+    : null,
+)
 </script>
 
 <svelte:head>
-	<title>メンバーの招待 | bizzet</title>
+	<title>{m.common_title({ page: data.pageTitle })}</title>
 </svelte:head>
 
-<main class="flex max-w-md flex-col gap-6 p-6 pt-0">
+<main class="flex max-w-xl flex-col gap-6 p-6 pt-0">
 	<div class="flex flex-col gap-1">
-		<h1 class="text-2xl font-bold">メンバーを招待する</h1>
-		<p class="text-muted-foreground text-sm">
-			招待リンクを送ると、メンバーはパスワードを決めてダッシュボードに参加できます（7日間有効）
-		</p>
+		<h1 class="text-2xl font-bold">{m.members_invite_heading()}</h1>
+		<p class="text-muted-foreground text-sm">{m.members_invite_description()}</p>
 	</div>
 
-	{#if form?.inviteUrl}
-		<div class="rounded-md border p-4 text-sm">
-			<p class="mb-2">{form.email} への招待リンク：</p>
-			<code class="break-all">{form.inviteUrl}</code>
-		</div>
+	{#if created}
+		<Alert.Root>
+			<CircleCheckIcon />
+			<Alert.Title>{m.members_invite_created({ email: created.email })}</Alert.Title>
+			<Alert.Description>{m.members_invite_created_description()}</Alert.Description>
+		</Alert.Root>
+		<Card.Root>
+			<Card.Content>
+				<FieldGroup>
+					<CopyLink
+						id="dashboard-url"
+						label={m.members_invite_link_dashboard()}
+						description={m.members_invite_link_dashboard_description()}
+						url={created.dashboardUrl}
+					/>
+					<CopyLink
+						id="wallet-url"
+						label={m.members_invite_link_wallet()}
+						description={m.members_invite_link_wallet_description()}
+						url={created.walletUrl}
+					/>
+				</FieldGroup>
+			</Card.Content>
+		</Card.Root>
 	{/if}
 
-	<form method="POST" use:enhance class="flex flex-col gap-6">
-		<FieldGroup>
-			<Field>
-				<FieldLabel for="email">メールアドレス</FieldLabel>
-				<Input id="email" name="email" type="email" required />
-			</Field>
-			<Field>
-				<FieldLabel for="groupId">グループ</FieldLabel>
-				<select
-					id="groupId"
-					name="groupId"
-					required
-					class="border-input bg-background h-9 rounded-md border px-3 text-sm"
-				>
-					{#each data.groups as group (group.id)}
-						<option value={group.id}>{group.name}</option>
-					{/each}
-				</select>
-			</Field>
-			<Field>
-				<FieldLabel for="role">ロール</FieldLabel>
-				<select
-					id="role"
-					name="role"
-					required
-					class="border-input bg-background h-9 rounded-md border px-3 text-sm"
-				>
-					<option value="viewer">Viewer</option>
-					<option value="approver">Approver</option>
-					<option value="owner">Owner</option>
-				</select>
-			</Field>
-			{#if form?.message}
-				<p class="text-destructive text-sm">{form.message}</p>
-			{/if}
-			<Field>
-				<Button type="submit">招待リンクを作る</Button>
-			</Field>
-		</FieldGroup>
-	</form>
-	<a href="/members" class="text-sm underline underline-offset-4">メンバーの一覧に戻る</a>
+	<Card.Root>
+		<Card.Content>
+			<form
+				method="POST"
+				use:enhance={() => {
+					pending = true
+					return async ({ update }) => {
+						pending = false
+						await update()
+					}
+				}}
+			>
+				<FieldGroup>
+					<Field>
+						<FieldLabel for="email">{m.members_field_email()}</FieldLabel>
+						<Input id="email" name="email" type="email" value={values?.email ?? ''} required />
+					</Field>
+					<Field>
+						<FieldLabel for="name">{m.members_field_name_optional()}</FieldLabel>
+						<Input id="name" name="name" value={values?.name ?? ''} />
+					</Field>
+					<Field>
+						<FieldLabel for="title">{m.members_field_title_optional()}</FieldLabel>
+						<Input
+							id="title"
+							name="title"
+							value={values?.title ?? ''}
+							placeholder={m.members_field_title_placeholder()}
+						/>
+					</Field>
+					<AssignmentFields groups={data.groups} bind:groupId bind:role idPrefix="invite" />
+					{#if form?.message}
+						<p class="text-destructive text-sm">{form.message}</p>
+					{/if}
+					<Field>
+						<Button type="submit" disabled={pending}>{m.members_invite_submit()}</Button>
+					</Field>
+				</FieldGroup>
+			</form>
+		</Card.Content>
+	</Card.Root>
+
+	<a href="/members" class="text-sm underline underline-offset-4">{m.members_back_to_list()}</a>
 </main>

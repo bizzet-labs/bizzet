@@ -55,25 +55,19 @@ export const actions: Actions = {
     const db = locals.db
     const email = normalizeEmail(invitation.email)
 
-    // 招待を先に使用済みにする。未使用のときだけ成功するので、同時に2回使われても片方だけが通る
-    const claimed = await db
-      .update(invitations)
-      .set({ usedAt: new Date() })
-      .where(
-        and(
-          eq(invitations.token, invitation.token),
-          isNull(invitations.usedAt),
-        ),
-      )
-      .returning({ token: invitations.token })
-    if (claimed.length === 0) error(410, m.auth_invite_used())
-    const release = () =>
-      db
-        .update(invitations)
-        .set({ usedAt: null })
-        .where(eq(invitations.token, invitation.token))
+    // パスワードの追加用リンクは、まだダッシュボードのユーザーを持たないメンバーにだけ使える
+    if (invitation.kind === 'add_password') {
+      const target = invitation.memberId
+        ? await db.query.members.findFirst({
+            where: eq(members.id, invitation.memberId),
+          })
+        : undefined
+      if (!target || target.userId) error(410, m.auth_invite_used())
+    }
 
-    // Better Auth のユーザーを作る。sveltekitCookies によりセッションの Cookie もここで発行される
+    // Better Auth のユーザーを作る。sveltekitCookies によりセッションの Cookie もここで発行される。
+    // ユーザーの作成は packages/db の hook が「このメールアドレスあての未使用の招待があること」を確かめる。
+    // メールアドレスは1人1つのため、同じ招待が同時に2回使われても、ユーザーを作れるのは片方だけになる
     let userId: string
     try {
       const result = await getAuth().api.signUpEmail({
@@ -82,13 +76,22 @@ export const actions: Actions = {
       })
       userId = result.user.id
     } catch (e) {
-      await release()
       if (e instanceof APIError && e.status === 'UNPROCESSABLE_ENTITY') {
         return fail(409, { message: m.auth_email_taken() })
       }
       throw e
     }
 
+    // ユーザーを作れた方だけが招待を使用済みにし、メンバーを作るか既存のメンバーに紐づける
+    await db
+      .update(invitations)
+      .set({ usedAt: new Date() })
+      .where(
+        and(
+          eq(invitations.token, invitation.token),
+          isNull(invitations.usedAt),
+        ),
+      )
     if (invitation.kind === 'add_password' && invitation.memberId) {
       await db
         .update(members)
