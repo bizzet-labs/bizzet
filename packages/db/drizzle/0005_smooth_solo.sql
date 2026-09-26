@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "groups_name_lower_idx" ON "groups" USING btree (lower("name"));
