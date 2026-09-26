@@ -1,7 +1,6 @@
 // デモモード（DEMO_MODE=1）。チェーン・ENS・パスキーの署名の代わりに DB だけで画面を動かす
 import { randomBytes, randomUUID } from 'node:crypto'
 import {
-  findToken,
   type ReceivingCurrency,
   type TokenSymbol,
   tokens,
@@ -12,6 +11,7 @@ import {
   deposits,
   ensSettings,
   eq,
+  getDemoBalances,
   groups,
   safeTransactions,
 } from '@bizzet/db'
@@ -22,50 +22,8 @@ export function isDemoMode() {
   return env.DEMO_MODE === '1'
 }
 
-type DemoBalances = Map<string, Record<'JPYC' | 'USDC', bigint>>
-
-// 仮置き：@bizzet/db の getDemoBalances が入るまでのローカル実装。入ったら次の行を
-// `export { getDemoBalances } from '@bizzet/db'` に置き換え、localDemoBalances を消す
-export const getDemoBalances = localDemoBalances
-
-// 入金の合計から、実行済みの出金を引いた残高（Safe のアドレスは小文字をキーにする）
-async function localDemoBalances(
-  db: Db,
-  safeAddresses: readonly string[],
-): Promise<DemoBalances> {
-  const result: DemoBalances = new Map()
-  for (const a of safeAddresses)
-    result.set(a.toLowerCase(), { JPYC: 0n, USDC: 0n })
-  const symbolOf = (token: string | null) => {
-    if (!token) return undefined
-    return (
-      findToken(token)?.symbol ??
-      tokens.find((t) => t.symbol === token.toUpperCase())?.symbol
-    )
-  }
-  const add = (
-    safe: string,
-    token: string | null,
-    amount: string | null,
-    sign: bigint,
-  ) => {
-    const entry = result.get(safe.toLowerCase())
-    const symbol = symbolOf(token)
-    if (!entry || !symbol || !amount) return
-    entry[symbol] += sign * BigInt(amount)
-  }
-  for (const d of await db.select().from(deposits)) {
-    add(d.safeAddress, d.token, d.amount, 1n)
-  }
-  const payouts = await db.query.safeTransactions.findMany({
-    where: and(
-      eq(safeTransactions.kind, 'payout'),
-      eq(safeTransactions.status, 'executed'),
-    ),
-  })
-  for (const p of payouts) add(p.safeAddress, p.token, p.amount, -1n)
-  return result
-}
+// 入金の合計から、実行済みの出金を引いた残高。ダッシュボードと同じ計算を使う
+export { getDemoBalances }
 
 // ホームの表示と同じ、通貨ごとの最小単位の10進文字列にしたデモの残高
 export async function getDemoTokenBalances(
