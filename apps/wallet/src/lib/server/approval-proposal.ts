@@ -11,9 +11,7 @@ import { type Group, getVisibleGroups } from './member'
 
 export type SafeTransaction = typeof safeTransactions.$inferSelect
 
-export function toSafeTransactionData(
-  tx: SafeTransaction,
-): SafeTransactionData {
+function toSafeTransactionData(tx: SafeTransaction): SafeTransactionData {
   return {
     to: getAddress(tx.to),
     value: BigInt(tx.value),
