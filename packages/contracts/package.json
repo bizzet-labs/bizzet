@@ -9,6 +9,7 @@
   "scripts": {
     "test": "hardhat test nodejs",
     "ens:setup": "node --experimental-strip-types scripts/ens-setup.ts",
+    "uniswap:liquidity": "node --experimental-strip-types scripts/uniswap-liquidity.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
