@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "@bizzet/docs",
   "version": "0.0.0",
   "private": true,
   "scripts": {

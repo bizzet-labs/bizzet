@@ -1,0 +1,207 @@
+.figure {
+  --bridge-gap: 1rem;
+  --bridge-tint: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  --bridge-tint-strong: color-mix(in srgb, var(--ifm-color-primary) 18%, transparent);
+  margin: 2rem 0;
+  font-size: 0.8rem;
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+}
+
+/* column 1: home chain, columns 2-3: other chains */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 var(--bridge-gap);
+}
+
+.chain,
+.chainHome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 0.75rem;
+  background: var(--ifm-background-surface-color);
+  text-align: center;
+}
+
+.chainHome {
+  border: 2px solid var(--ifm-color-primary);
+}
+
+.chainHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chainIcon {
+  display: flex;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.chainName {
+  font-size: 0.95rem;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.arrival {
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-emphasis-800);
+  font-size: 0.72rem;
+}
+
+.direct {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.directLine {
+  position: relative;
+  width: 2px;
+  background: var(--ifm-color-primary);
+}
+
+.directLine::after,
+.arrowLine::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--ifm-color-primary);
+  border-bottom: 2px solid var(--ifm-color-primary);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.directLabel,
+.arrowLabel {
+  position: absolute;
+  left: calc(50% + 0.6rem);
+  color: var(--ifm-color-primary);
+  font-size: 0.9rem;
+  font-weight: var(--ifm-font-weight-bold);
+  white-space: nowrap;
+}
+
+.directLabel {
+  top: 40%;
+}
+
+.bridge {
+  grid-column: 2 / 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* bracket joining the two other-chain centers */
+.merge {
+  align-self: stretch;
+  height: 1rem;
+  margin: 0 calc(25% - var(--bridge-gap) / 4);
+  border: 2px solid var(--ifm-color-primary);
+  border-top: 0;
+  border-radius: 0 0 0.6rem 0.6rem;
+}
+
+.arrow {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 2.25rem;
+}
+
+.arrowLine {
+  position: relative;
+  width: 2px;
+  background: var(--ifm-color-primary);
+}
+
+.arrowLabel {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.stepGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step {
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ifm-color-primary);
+  border-radius: 999px;
+  background: var(--bridge-tint);
+  color: var(--ifm-color-primary);
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.wallet {
+  grid-column: 1 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--ifm-color-primary);
+  border-radius: 0.75rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.walletName,
+.walletNote {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.walletName {
+  color: var(--ifm-color-primary);
+  font-size: 0.95rem;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.walletNote {
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--bridge-tint-strong);
+  color: var(--ifm-color-emphasis-800);
+}
+
+.walletName .icon,
+.walletNote .icon {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+@media (max-width: 640px) {
+  .figure {
+    --bridge-gap: 0.5rem;
+  }
+
+  .chain,
+  .chainHome {
+    padding: 0.5rem;
+  }
+
+  .directLabel,
+  .arrowLabel {
+    font-size: 0.75rem;
+  }
+}
