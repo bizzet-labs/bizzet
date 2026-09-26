@@ -1,9 +1,14 @@
 import {
   type Address,
+  concatHex,
+  encodeAbiParameters,
   encodeFunctionData,
   type Hex,
+  hashStruct,
   hashTypedData,
+  keccak256,
   parseAbi,
+  toHex,
   zeroAddress,
 } from 'viem'
 import { sepolia } from './addresses/sepolia.ts'
@@ -84,6 +89,61 @@ export function hashSafeTransaction(safe: Address, tx: SafeTransactionData) {
       refundReceiver: zeroAddress,
     },
   })
+}
+
+// SafeTx のハッシュの元になるバイト列（0x1901・ドメインの区切り・SafeTx の構造体のハッシュ）。
+// Safe v1.4.1 の execTransaction は、コントラクト署名のオーナーに isValidSignature(bytes,bytes) で
+// ハッシュではなくこのバイト列を渡すため、入れ子の署名ではこれが SafeMessage の中身になる
+export function encodeSafeTransactionData(
+  safe: Address,
+  tx: SafeTransactionData,
+) {
+  const domainSeparator = keccak256(
+    encodeAbiParameters(
+      [{ type: 'bytes32' }, { type: 'uint256' }, { type: 'address' }],
+      [
+        keccak256(
+          toHex('EIP712Domain(uint256 chainId,address verifyingContract)'),
+        ),
+        BigInt(sepolia.chainId),
+        safe,
+      ],
+    ),
+  )
+  const structHash = hashStruct({
+    types: safeTxTypes,
+    primaryType: 'SafeTx',
+    data: {
+      ...tx,
+      safeTxGas: 0n,
+      baseGas: 0n,
+      gasPrice: 0n,
+      gasToken: zeroAddress,
+      refundReceiver: zeroAddress,
+    },
+  })
+  return concatHex(['0x1901', domainSeparator, structHash])
+}
+
+// Safe v1.4.1 の CompatibilityFallbackHandler が isValidSignature で検証する SafeMessage のハッシュ。
+// ドメインはメッセージに署名する側の Safe で、getMessageHashForSafe(safe, message) と同じ値になる
+export function hashSafeMessage(safe: Address, message: Hex) {
+  return hashTypedData({
+    domain: { chainId: sepolia.chainId, verifyingContract: safe },
+    types: { SafeMessage: [{ type: 'bytes', name: 'message' }] },
+    primaryType: 'SafeMessage',
+    message: { message },
+  })
+}
+
+// オーナーが Safe（ownerSafe）である Safe の取引に、ownerSafe のオーナーが署名するハッシュ。
+// ownerSafe のオーナーは、この値を自分の Safe の取引と同じようにパスキーで署名する
+export function hashNestedSafeTransaction(
+  ownerSafe: Address,
+  safe: Address,
+  tx: SafeTransactionData,
+) {
+  return hashSafeMessage(ownerSafe, encodeSafeTransactionData(safe, tx))
 }
 
 export function encodeErc20Transfer(recipient: Address, amount: bigint) {

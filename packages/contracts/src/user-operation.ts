@@ -154,6 +154,16 @@ export function encodeSafeSignatures(
   return concatHex([...fixed, ...dynamic])
 }
 
+// オーナーが Safe（ownerSafe）である Safe の取引の署名。ownerSafe のコントラクト署名を1つだけ並べ、
+// 可変部分に ownerSafe 自身の署名の並び（encodeSafeSignatures で並べた、そのオーナーたちの署名）を入れる。
+// 実行時、Safe は ownerSafe の fallback handler に isValidSignature(SafeTx の元のバイト列, 署名の並び) を尋ねる
+export function encodeNestedSafeSignature(
+  ownerSafe: Address,
+  ownerSignatures: Hex,
+) {
+  return encodeSafeSignatures([{ signer: ownerSafe, data: ownerSignatures }])
+}
+
 // UserOperation の signature。先頭の validAfter・validUntil は 0（期限なし）にする
 function encodeUserOperationSignature(safeSignatures: Hex) {
   return encodePacked(['uint48', 'uint48', 'bytes'], [0, 0, safeSignatures])
