@@ -45,6 +45,7 @@ pnpm dev          # docs :3000、ダッシュボード :5174、ウォレット :
 | `DATABASE_URL` | 任意 | ダッシュボードと同じ Postgres。空ならローカルの DB |
 | `PIMLICO_API_KEY` | 必須 | Pimlico の bundler と paymaster のキー。サーバー側だけで使う |
 | `WALLET_SESSION_SECRET` | 本番で必須 | ログインのセッション Cookie に署名する鍵。dev で空なら起動ごとの使い捨ての鍵 |
+| `PUBLIC_DASHBOARD_URL` | 任意 | パスワードの追加用リンクに使うダッシュボードの URL。空なら `http://localhost:5174` |
 | `PUBLIC_SEPOLIA_RPC_URL` | 任意 | Sepolia の RPC。空なら公開の RPC |
 | `PUBLIC_PASSKEY_RP_ID` | 任意 | パスキーの rpId。空ならページのホスト名 |
 | `PUBLIC_PAY_MOCK_RESOLUTION` | 任意 | dev サーバーでだけ、決済ページの ENS の解決の代わりに使う値（`0xアドレス,USDC,店名`） |
