@@ -6,7 +6,12 @@ import {
 import { Bytes, Hex, PublicKey, WebAuthnP256 } from 'ox'
 import type { Address } from 'viem'
 import { createWebAuthnCredential } from 'viem/account-abstraction'
+import { env } from '$env/dynamic/public'
 import { publicClient } from './chain.js'
+
+// パスキーを紐づけるドメイン。ウォレットとダッシュボードで同じ親ドメインを指すことで、
+// 一方で登録したパスキーを他方のログインでも使える。未設定なら表示中のホスト名
+export const RP_ID = env.PUBLIC_PASSKEY_RP_ID || undefined
 
 // 仮置き：パスキーと署名者の対応表は本来バックエンドに置く。バックエンドを決めるまではブラウザ内に保存する
 const STORAGE_KEY = 'bizzet:passkey'
@@ -46,7 +51,10 @@ export function toCoordinates(publicKey: Hex.Hex) {
 
 // パスキーを作り、その公開鍵から署名者のアドレスを求める。署名者はまだ配置しない
 export async function registerPasskey(): Promise<StoredPasskey> {
-  const credential = await createWebAuthnCredential({ name: 'bizzet' })
+  const credential = await createWebAuthnCredential({
+    name: 'bizzet',
+    ...(RP_ID && { rp: { id: RP_ID, name: 'bizzet' } }),
+  })
   const { x, y } = toCoordinates(credential.publicKey)
   const signer = await publicClient.readContract({
     address: addresses.passkey.signerFactory,
@@ -65,6 +73,7 @@ export async function authenticatePasskey(passkey: StoredPasskey) {
   const { metadata, signature } = await WebAuthnP256.sign({
     credentialId: passkey.id,
     challenge,
+    rpId: RP_ID,
   })
   const { x, y } = toCoordinates(passkey.publicKey)
   const ok = WebAuthnP256.verify({

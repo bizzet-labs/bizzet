@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button/index.js'
 import { Field, FieldGroup } from '@/components/ui/field/index.js'
 import { cn } from '@/utils.js'
 import { enhance } from '$app/forms'
+import { env } from '$env/dynamic/public'
 
 let {
   challenge,
@@ -21,7 +22,10 @@ async function handleLogin() {
   pending = true
   error = ''
   try {
-    const { raw, metadata, signature } = await WebAuthnP256.sign({ challenge })
+    const { raw, metadata, signature } = await WebAuthnP256.sign({
+      challenge,
+      rpId: env.PUBLIC_PASSKEY_RP_ID || undefined,
+    })
     const response = {
       credentialId: raw.id,
       metadata,

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { type Db, eq, members, passkeys, sessions } from '@bizzet/db'
 import type { Cookies } from '@sveltejs/kit'
 import { Hex, PublicKey, Signature, WebAuthnP256 } from 'ox'
+import { env } from '$env/dynamic/public'
 
 export const SESSION_COOKIE = 'session'
 const CHALLENGE_COOKIE = 'passkey_challenge'
@@ -54,6 +55,7 @@ export async function verifyLogin(
       signature: Signature.fromHex(response.signature),
       publicKey,
       origin,
+      rpId: env.PUBLIC_PASSKEY_RP_ID || new URL(origin).hostname,
     })
   } catch {
     return null
