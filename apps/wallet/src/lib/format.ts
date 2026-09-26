@@ -25,3 +25,10 @@ export function formatUnitsJa(
     maximumFractionDigits,
   })
 }
+
+// メンバーの権限の表示名。招待とマイページで同じ呼び方にする
+export const roleLabels: Record<'owner' | 'approver' | 'viewer', string> = {
+  owner: 'Owner',
+  approver: 'Approver',
+  viewer: 'Viewer',
+}

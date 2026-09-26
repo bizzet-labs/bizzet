@@ -8,7 +8,7 @@ import { onMount } from 'svelte'
 import { callApi } from '@/api.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
-import { explorerAddressUrl } from '@/format.js'
+import { explorerAddressUrl, roleLabels } from '@/format.js'
 import { endSession, loadPasskey, type StoredPasskey } from '@/passkey.js'
 import { getSafeAddress } from '@/safe.js'
 import { goto } from '$app/navigation'
@@ -28,12 +28,6 @@ type Me = {
   group: { name: string; kind: 'headquarters' | 'store' }
   hasPassword: boolean
   passwordLink: PasswordLink | null
-}
-
-const roleLabels: Record<Me['member']['role'], string> = {
-  owner: 'Owner',
-  approver: 'Approver',
-  viewer: 'Viewer',
 }
 
 let me = $state<Me | null>(null)
