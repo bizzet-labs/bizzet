@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@bizzet/db": "workspace:*",
+    "@tanstack/svelte-table": "^9.2.4",
     "better-auth": "1.7.5",
     "ox": "^0.14.45"
   }

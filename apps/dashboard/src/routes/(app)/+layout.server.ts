@@ -1,7 +1,7 @@
 import { eq, groups } from '@bizzet/db'
-import type { PageServerLoad } from './$types'
+import type { LayoutServerLoad } from './$types'
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: LayoutServerLoad = async ({ locals }) => {
   const member = locals.member
   if (!member) return { member: null, groupName: '' }
   const group = await locals.db.query.groups.findFirst({

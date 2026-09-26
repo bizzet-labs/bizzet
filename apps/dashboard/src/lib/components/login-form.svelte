@@ -16,12 +16,6 @@ let pending = $state(false)
 
 <div class={cn("flex flex-col gap-6", className)}>
 	<FieldGroup>
-		<div class="flex flex-col items-center gap-1 text-center">
-			<h1 class="text-2xl font-bold">ダッシュボードにログイン</h1>
-			<p class="text-sm text-balance text-muted-foreground">
-				メールアドレスとパスワードでログインします
-			</p>
-		</div>
 		<form
 			method="POST"
 			class="flex flex-col gap-6"
@@ -39,6 +33,7 @@ let pending = $state(false)
 					id="email"
 					name="email"
 					type="email"
+					class="h-10"
 					autocomplete="username"
 					value={email}
 					required
@@ -50,6 +45,7 @@ let pending = $state(false)
 					id="password"
 					name="password"
 					type="password"
+					class="h-10"
 					autocomplete="current-password"
 					required
 				/>
@@ -58,11 +54,8 @@ let pending = $state(false)
 				<p class="text-destructive text-center text-sm">{message}</p>
 			{/if}
 			<Field>
-				<Button type="submit" size="lg" disabled={pending}>ログイン</Button>
+				<Button type="submit" size="lg" class="h-10" disabled={pending}>ログイン</Button>
 			</Field>
 		</form>
-		<p class="text-center text-sm text-muted-foreground">
-			アカウントは、管理者からの招待リンクから作成します
-		</p>
 	</FieldGroup>
 </div>
