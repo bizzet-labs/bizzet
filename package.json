@@ -9,7 +9,12 @@
     "dev": "pnpm --parallel -r run dev",
     "dev:docs": "pnpm --filter @bizzet/docs run dev",
     "dev:dashboard": "pnpm --filter @bizzet/dashboard run dev",
-    "dev:wallet": "pnpm --filter @bizzet/wallet run dev"
+    "dev:wallet": "pnpm --filter @bizzet/wallet run dev",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @bizzet/db run generate",
+    "db:migrate": "pnpm --filter @bizzet/db run migrate",
+    "db:studio": "pnpm --filter @bizzet/db run studio"
   },
   "engines": {
     "node": ">=20.0"
