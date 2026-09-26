@@ -3,19 +3,15 @@ import { json } from '@sveltejs/kit'
 import { listApprovals } from '$lib/server/approvals'
 import { getBalances, type TokenBalances } from '$lib/server/balances'
 import {
-  findMemberByPasskey,
   getVisibleGroups,
   isHeadquartersSigner,
+  requireMember,
 } from '$lib/server/member'
 import type { RequestHandler } from './$types'
 
 // ホーム（WS-02）に出す、見られるグループの残高と、自分の署名を待っている提案の件数
-export const POST: RequestHandler = async ({ locals, request }) => {
-  const { passkeyId } = (await request.json()) as { passkeyId?: unknown }
-  const { member, passkey, group } = await findMemberByPasskey(
-    locals.db,
-    passkeyId,
-  )
+export const POST: RequestHandler = async ({ locals }) => {
+  const { member, passkey, group } = await requireMember(locals)
   const visible = await getVisibleGroups(locals.db, group)
   const addresses = visible.flatMap((g) =>
     g.safeAddress ? [g.safeAddress] : [],

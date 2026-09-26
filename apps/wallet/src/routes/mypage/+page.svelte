@@ -52,7 +52,7 @@ async function handleCreate() {
 }
 
 async function handleLogout() {
-  endSession()
+  await endSession()
   await goto('/login')
 }
 </script>

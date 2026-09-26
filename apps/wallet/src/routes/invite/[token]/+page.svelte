@@ -4,7 +4,7 @@ import FingerprintIcon from '@lucide/svelte/icons/fingerprint'
 import MonitorIcon from '@lucide/svelte/icons/monitor'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
-import { registerPasskey, startSession } from '@/passkey.js'
+import { registerPasskey } from '@/passkey.js'
 import { enhance } from '$app/forms'
 
 let { data, form } = $props()
@@ -98,7 +98,6 @@ async function handleRegister() {
 					bind:this={formEl}
 					use:enhance={() => {
 						return async ({ result, update }) => {
-							if (result.type === 'success' && result.data?.completed) startSession()
 							pending = false
 							await update()
 						}

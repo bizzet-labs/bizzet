@@ -2,34 +2,27 @@
 import FingerprintIcon from '@lucide/svelte/icons/fingerprint'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
-import {
-  authenticatePasskey,
-  loadPasskey,
-  registerPasskey,
-  startSession,
-} from '@/passkey.js'
+import { loadPasskey, login } from '@/passkey.js'
 import { goto } from '$app/navigation'
 import logoMark from '$lib/assets/logo-mark.png'
 
 let pending = $state(false)
 let error = $state('')
 
-// 仮置き：この端末にパスキーがなければ作り、あればそれで本人か確かめる。登録の流れを決めた時点で分ける
+// 登録済みのパスキーでログインする。パスキーの登録は招待か追加用のリンクから行う
 async function handleLogin() {
   pending = true
   error = ''
   try {
-    const passkey = loadPasskey()
-    if (passkey) {
-      await authenticatePasskey(passkey)
-    } else {
-      await registerPasskey()
-    }
-    startSession()
+    await login(loadPasskey())
     await goto('/')
   } catch (e) {
     console.error(e)
-    error = 'パスキーでログインできませんでした'
+    // サーバーが断った理由はそのまま出し、パスキーの操作の失敗やキャンセルは一律の文言にする
+    error =
+      e instanceof Error && e.name === 'Error'
+        ? e.message
+        : 'パスキーでログインできませんでした'
   } finally {
     pending = false
   }
