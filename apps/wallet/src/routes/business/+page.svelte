@@ -3,7 +3,7 @@ import BanknoteArrowDownIcon from '@lucide/svelte/icons/banknote-arrow-down'
 import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
 import PenLineIcon from '@lucide/svelte/icons/pen-line'
 import { onMount } from 'svelte'
-import { callApi } from '@/approvals.js'
+import { callApi } from '@/api.js'
 import * as Card from '@/components/ui/card/index.js'
 import { loadPasskey } from '@/passkey.js'
 

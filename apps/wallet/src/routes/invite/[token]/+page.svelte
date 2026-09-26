@@ -4,6 +4,7 @@ import FingerprintIcon from '@lucide/svelte/icons/fingerprint'
 import MonitorIcon from '@lucide/svelte/icons/monitor'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
+import { roleLabels } from '@/format.js'
 import { registerPasskey } from '@/passkey.js'
 import { enhance } from '$app/forms'
 
@@ -16,8 +17,6 @@ let formEl = $state<HTMLFormElement>()
 // 登録した直後はログイン済み、使用済みの招待を開き直したときはログインが要る
 const justCompleted = $derived(form?.completed === true)
 const completed = $derived(justCompleted || data.completed)
-
-const roleLabel = { owner: 'Owner', approver: 'Approver', viewer: 'Viewer' }
 
 // 端末でパスキーを作り、その情報をサーバーに送ってメンバーとして登録する
 async function handleRegister() {
@@ -87,7 +86,7 @@ async function handleRegister() {
 				{:else}
 					<Card.Title>bizzet への招待</Card.Title>
 					<Card.Description>
-						{data.groupName} の {roleLabel[data.role]} として招待されています
+						{data.groupName} の {roleLabels[data.role]} として招待されています
 					</Card.Description>
 				{/if}
 			</Card.Header>

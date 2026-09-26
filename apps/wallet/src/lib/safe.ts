@@ -6,12 +6,12 @@ import {
   toSafePasskeyAccount,
 } from '@bizzet/contracts'
 import { WebAuthnP256 } from 'ox'
-import type { Address, Hex } from 'viem'
+import type { Hex } from 'viem'
 import { publicClient } from './chain.js'
 import { RP_ID, type StoredPasskey, toCoordinates } from './passkey.js'
 
-// 仮置き：検証用に、オーナーがこのパスキーの署名者1人・しきい値 1 の Safe を使う。
-// グループの Safe（本部・店舗）は、メンバー管理とバックエンドを決めた時点で置き換える
+// パスキーごとの Safe。オーナーはこのパスキーの署名者1人・しきい値 1 で、グループの Safe（本部・店舗）とは別に、
+// 承認の実行を送る ERC-4337 のアカウントとマイページのアドレス表示に使う
 const SALT_NONCE = 0n
 
 let proxyCreationCode: Promise<Hex> | undefined
@@ -41,11 +41,6 @@ export async function getSafeAddress(passkey: StoredPasskey) {
     SALT_NONCE,
     await loadProxyCreationCode(),
   )
-}
-
-export async function isSafeDeployed(address: Address) {
-  const code = await publicClient.getCode({ address })
-  return code !== undefined && code !== '0x'
 }
 
 // このパスキーで署名する Safe のアカウント。署名のたびに WebAuthn でパスキーに確かめさせる
