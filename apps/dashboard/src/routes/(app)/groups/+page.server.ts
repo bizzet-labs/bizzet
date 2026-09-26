@@ -1,12 +1,11 @@
-import { error } from '@sveltejs/kit'
 import { m } from '$lib/paraglide/messages.js'
 import { listGroups } from '$lib/server/group-setup'
+import { requireMember } from '$lib/server/guards'
 import { isHeadquartersMember } from '$lib/server/visibility'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const member = locals.member
-  if (!member) error(401)
+  const member = requireMember(locals.member)
   const db = locals.db
   const [groups, isHeadquarters] = await Promise.all([
     listGroups(db, member),

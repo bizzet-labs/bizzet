@@ -2,6 +2,7 @@ import { eq, groups, members, passkeys } from '@bizzet/db'
 import { error, fail } from '@sveltejs/kit'
 import { getAddress } from 'viem'
 import { env } from '$env/dynamic/private'
+import { explorerAddressUrl, explorerTxUrl } from '$lib/explorer'
 import { m } from '$lib/paraglide/messages.js'
 import {
   checkLabel,
@@ -9,44 +10,39 @@ import {
   isEnsOperatorConfigured,
   isReceivingCurrency,
   resolveGroupEns,
-  type SyncEnsResult,
   syncGroupEns,
   trySyncGroupEns,
 } from '$lib/server/ens'
 import {
-  type ConfigureResult,
-  configureHeadquartersSafe,
-  configureStoreSafe,
-  type DeploySafeResult,
-  deployGroupSafe,
-  getHeadquartersCandidates,
   getKeeperAddress,
   getRolesStatus,
+  proposeRolesSetup,
+} from '$lib/server/group-roles'
+import {
+  configureHeadquartersSafe,
+  configureStoreSafe,
+  deployGroupSafe,
+  getHeadquartersCandidates,
   HEADQUARTERS_MIN_OWNERS,
   HEADQUARTERS_THRESHOLD,
-  type ProposeRolesResult,
-  proposeRolesSetup,
   refreshDeployment,
-} from '$lib/server/group-setup'
-import { requireOwner } from '$lib/server/guards'
+} from '$lib/server/group-safe'
+import { requireOwner, requireVisibleGroup } from '$lib/server/guards'
 import { isOperatorConfigured } from '$lib/server/operator'
 import { getHeadquarters } from '$lib/server/safe'
-import { canSeeGroup, isHeadquartersMember } from '$lib/server/visibility'
+import { isHeadquartersMember } from '$lib/server/visibility'
 import type { Actions, PageServerLoad } from './$types'
-
-// ベータ版は Sepolia だけのため、エクスプローラーはこの1つに決め打ちする
-const EXPLORER_URL = 'https://sepolia.etherscan.io'
+import {
+  configureMessage,
+  deployMessage,
+  ensMessage,
+  proposeMessage,
+} from './reason-messages'
 
 // 設定画面は Owner だけが開ける。見られないグループは存在も分からないよう 404 にする
 async function loadGroup(locals: App.Locals, id: string) {
   const member = requireOwner(locals.member)
-  if (!(await canSeeGroup(locals.db, member, id))) {
-    error(404, m.common_error_not_found())
-  }
-  const group = await locals.db.query.groups.findFirst({
-    where: eq(groups.id, id),
-  })
-  if (!group) error(404, m.common_error_not_found())
+  const group = await requireVisibleGroup(locals.db, member, id)
   return { member, group }
 }
 
@@ -103,7 +99,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const safe = group.safeAddress
     ? {
         address: getAddress(group.safeAddress),
-        url: `${EXPLORER_URL}/address/${getAddress(group.safeAddress)}`,
+        url: explorerAddressUrl(getAddress(group.safeAddress)),
         owners: await labelOwners(
           locals,
           group.safeOwners ?? [],
@@ -152,77 +148,17 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       label: group.ensLabel,
       currency: group.receivingCurrency,
       status: group.ensStatus,
-      txUrl: group.ensTxHash ? `${EXPLORER_URL}/tx/${group.ensTxHash}` : null,
+      txUrl: group.ensTxHash ? explorerTxUrl(group.ensTxHash) : null,
       view: ensView,
     },
     roles: roles && {
       ...roles,
-      rolesUrl: `${EXPLORER_URL}/address/${roles.rolesAddress}`,
+      rolesUrl: explorerAddressUrl(roles.rolesAddress),
       proposal: roles.proposal && {
         ...roles.proposal,
         createdAt: roles.proposal.createdAt.toISOString(),
       },
     },
-  }
-}
-
-function configureMessage(
-  reason: Extract<ConfigureResult, { ok: false }>['reason'],
-) {
-  switch (reason) {
-    case 'already_configured':
-      return m.groups_error_already_configured()
-    case 'headquarters_unconfigured':
-      return m.groups_error_hq_unconfigured()
-    case 'not_enough_owners':
-      return m.groups_error_not_enough_owners({ min: HEADQUARTERS_MIN_OWNERS })
-    case 'invalid_owner':
-      return m.groups_error_invalid_owner()
-  }
-}
-
-function proposeMessage(
-  reason: Extract<ProposeRolesResult, { ok: false }>['reason'],
-) {
-  switch (reason) {
-    case 'not_store':
-      return m.groups_error_not_store()
-    case 'store_unconfigured':
-      return m.groups_error_store_unconfigured()
-    case 'headquarters_unconfigured':
-      return m.groups_error_hq_unconfigured()
-    case 'keeper_unset':
-      return m.groups_error_keeper_unset()
-    case 'already_proposed':
-      return m.groups_error_roles_proposed()
-  }
-}
-
-function deployMessage(
-  reason: Extract<DeploySafeResult, { ok: false }>['reason'],
-) {
-  switch (reason) {
-    case 'unconfigured':
-      return m.groups_safe_deploy_error_unconfigured()
-    case 'already_deployed':
-      return m.groups_safe_deploy_error_already()
-    case 'operator_unset':
-      return m.groups_safe_deploy_error_operator()
-    case 'address_mismatch':
-      return m.groups_safe_deploy_error_mismatch()
-    case 'failed':
-      return m.groups_safe_deploy_error_failed()
-  }
-}
-
-function ensMessage(reason: Extract<SyncEnsResult, { ok: false }>['reason']) {
-  switch (reason) {
-    case 'not_configured':
-      return m.groups_ens_error_not_configured()
-    case 'no_label':
-      return m.groups_ens_error_no_label()
-    case 'failed':
-      return m.groups_ens_error_failed()
   }
 }
 
