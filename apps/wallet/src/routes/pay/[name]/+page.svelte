@@ -9,12 +9,10 @@ import {
   tokens,
   uniswapV4,
 } from '@bizzet/contracts'
-import CircleIcon from '@lucide/svelte/icons/circle'
 import CircleAlertIcon from '@lucide/svelte/icons/circle-alert'
 import CircleCheckIcon from '@lucide/svelte/icons/circle-check'
 import ExternalLinkIcon from '@lucide/svelte/icons/external-link'
 import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle'
-import StoreIcon from '@lucide/svelte/icons/store'
 import WalletIcon from '@lucide/svelte/icons/wallet'
 import { onMount } from 'svelte'
 import {
@@ -28,19 +26,14 @@ import {
 import { publicClient } from '@/chain.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
-import { explorerAddressUrl, explorerTxUrl, shortAddress } from '@/format.js'
+import { explorerTxUrl, shortAddress } from '@/format.js'
 import {
   connectInjectedWallet,
   getInjectedProvider,
   type InjectedWallet,
   isUserRejection,
 } from '@/injected-wallet.js'
-import {
-  DEMO_JPY_PER_USD,
-  formatTokenAmount,
-  parsePriceTag,
-  toTokenAmount,
-} from '@/pay.js'
+import { formatTokenAmount, parsePriceTag, toTokenAmount } from '@/pay.js'
 import {
   jpycPerUsdc,
   otherCurrency,
@@ -55,6 +48,9 @@ import { dev } from '$app/environment'
 import { page } from '$app/state'
 import { env } from '$env/dynamic/public'
 import logoMark from '$lib/assets/logo-mark.png'
+import PriceHeader from './price-header.svelte'
+import StoreSummary from './store-summary.svelte'
+import SwapSteps from './swap-steps.svelte'
 
 const name = $derived(page.params.name ?? '')
 const priceTag = $derived(parsePriceTag(page.url.searchParams))
@@ -157,12 +153,6 @@ const insufficient = $derived(
 let swapSteps = $state<SwapStep[]>([])
 let swapStepIndex = $state(0)
 let swapStepWaiting = $state<'wallet' | 'block'>('wallet')
-
-const SWAP_STEP_LABELS: Record<SwapStep, string> = {
-  erc20Approve: 'Permit2 に通貨の利用を許可',
-  permit2Approve: 'Uniswap のルーターに Permit2 で許可',
-  swap: 'Uniswap v4 で交換して支払う',
-}
 
 async function loadQuote() {
   if (!swapToken || !token || amount === null || !recipient) {
@@ -350,10 +340,6 @@ async function handlePay() {
     if (wallet) await refreshBalance(wallet.account).catch(() => {})
   }
 }
-
-function formatYen(value: number) {
-  return `¥${value.toLocaleString('ja-JP')}`
-}
 </script>
 
 <svelte:head>
@@ -374,64 +360,10 @@ function formatYen(value: number) {
 				<p class="text-muted-foreground text-sm">値札の QR コードを読み直してください</p>
 			</Card.Content>
 		{:else}
-			<Card.Header class="items-center text-center">
-				<Card.Description>{priceTag.item || 'お支払い'}</Card.Description>
-				<Card.Title class="text-4xl font-bold tracking-tight">
-					{formatYen(priceTag.priceJpy)}
-				</Card.Title>
-				{#if amount !== null && currency}
-					<p class="text-muted-foreground text-sm">
-						{formatTokenAmount(amount, currency)} でのお支払い
-					</p>
-					{#if currency === 'USDC'}
-						<p class="text-muted-foreground text-xs">
-							円からはデモ用の固定レート（1 USD = {DEMO_JPY_PER_USD} 円）で換算
-						</p>
-					{/if}
-					{#if uniswapRate !== null}
-						<p class="text-muted-foreground text-xs">
-							Uniswap v4 の見積もりのレート 1 USDC ≈ {uniswapRate.toLocaleString('ja-JP', {
-								maximumFractionDigits: 2,
-							})} JPYC
-						</p>
-					{/if}
-				{/if}
-			</Card.Header>
+			<PriceHeader {priceTag} {amount} {currency} {uniswapRate} />
 
 			<Card.Content class="flex flex-col gap-4">
-				<div class="bg-muted/50 flex items-start gap-3 rounded-lg p-3">
-					<StoreIcon class="text-muted-foreground mt-0.5 size-5" />
-					<div class="flex min-w-0 flex-1 flex-col gap-0.5">
-						{#if resolving}
-							<span class="text-muted-foreground flex items-center gap-2 text-sm">
-								<LoaderCircleIcon class="size-4 animate-spin" />
-								{name} を ENS で解決しています
-							</span>
-						{:else}
-							<span class="font-medium">{resolved?.description ?? name}</span>
-							<span class="font-mono text-xs">{name}</span>
-							{#if recipient}
-								<a
-									href={explorerAddressUrl(recipient)}
-									target="_blank"
-									rel="noreferrer"
-									class="text-muted-foreground inline-flex items-center gap-1 font-mono text-xs hover:underline"
-								>
-									受取先 {shortAddress(recipient)}
-									<ExternalLinkIcon class="size-3" />
-								</a>
-							{/if}
-							{#if currency}
-								<span class="text-muted-foreground text-xs">受取通貨 {currency}</span>
-							{/if}
-							{#if mocked}
-								<span class="mt-1 self-start rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">
-									開発用のモック（ENS で解決していません）
-								</span>
-							{/if}
-						{/if}
-					</div>
-				</div>
+				<StoreSummary {resolving} {name} {resolved} {recipient} {currency} {mocked} />
 
 				{#if !resolving}
 					{#if resolveError || !recipient}
@@ -531,27 +463,12 @@ function formatYen(value: number) {
 								</p>
 							{/if}
 							{#if swapping && swapSteps.length > 0}
-								<ol class="flex flex-col gap-1.5 text-sm">
-									{#each swapSteps as step, i (step)}
-										<li class="flex items-center gap-2">
-											{#if i < swapStepIndex}
-												<CircleCheckIcon class="size-4 text-emerald-600" />
-											{:else if i === swapStepIndex && phase === 'confirming'}
-												<LoaderCircleIcon class="size-4 animate-spin" />
-											{:else}
-												<CircleIcon class="text-muted-foreground size-4" />
-											{/if}
-											<span class={i > swapStepIndex ? 'text-muted-foreground' : ''}>
-												{i + 1}. {SWAP_STEP_LABELS[step]}
-											</span>
-											{#if i === swapStepIndex && phase === 'confirming'}
-												<span class="text-muted-foreground ml-auto text-xs">
-													{swapStepWaiting === 'wallet' ? 'ウォレットで承認' : 'ブロック待ち'}
-												</span>
-											{/if}
-										</li>
-									{/each}
-								</ol>
+								<SwapSteps
+									steps={swapSteps}
+									stepIndex={swapStepIndex}
+									confirming={phase === 'confirming'}
+									waiting={swapStepWaiting}
+								/>
 							{/if}
 							<Button
 								size="lg"
