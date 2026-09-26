@@ -62,7 +62,7 @@
   top: 50%;
 }
 
-/* the part above the Bizzet frame is 2.5rem; the label is centered in it */
+/* the part above the bizzet frame is 2.5rem; the label is centered in it */
 .arrowTall {
   height: calc(var(--flow-top) + 2.5rem);
 }

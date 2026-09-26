@@ -5,8 +5,8 @@ import { themes as prismThemes } from 'prism-react-renderer'
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Bizzet',
-  tagline: 'Bizzet Documentation',
+  title: 'bizzet',
+  tagline: 'bizzet Documentation',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -58,9 +58,9 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'Bizzet',
+      title: 'bizzet',
       logo: {
-        alt: 'Bizzet Logo',
+        alt: 'bizzet Logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -84,7 +84,7 @@ const config: Config = {
           title: 'Docs',
           items: [
             {
-              label: 'About Bizzet',
+              label: 'About bizzet',
               to: '/docs/about',
             },
           ],
@@ -99,7 +99,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Bizzet.`,
+      copyright: `Copyright © ${new Date().getFullYear()} bizzet.`,
     },
     prism: {
       theme: prismThemes.github,

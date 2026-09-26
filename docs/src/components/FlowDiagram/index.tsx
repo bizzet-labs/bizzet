@@ -128,7 +128,7 @@ function UnitCard({ unit }: { unit: Unit }): ReactNode {
 
 export default function FlowDiagram(): ReactNode {
   return (
-    <figure className={styles.figure} aria-label="Bizzet の全体像">
+    <figure className={styles.figure} aria-label="bizzet の全体像">
       <div className={styles.customers}>
         {shops.map((shop) => (
           <div key={shop.name} className={styles.customer}>
@@ -141,7 +141,7 @@ export default function FlowDiagram(): ReactNode {
         ))}
       </div>
       <section className={styles.bizzet}>
-        <span className={styles.bizzetLabel}>Bizzet</span>
+        <span className={styles.bizzetLabel}>bizzet</span>
         <div className={styles.grid}>
           {shops.map((shop) => (
             <UnitCard key={shop.name} unit={shop} />
