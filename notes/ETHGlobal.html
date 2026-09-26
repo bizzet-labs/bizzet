@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ピッチ動画アウトライン（3分）</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666666;
+    --border: #e0e0e0;
+    --accent: #4f46e5;
+    --chip-bg: #eef2ff;
+    --script-bg: #f7f7f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181c;
+      --fg: #e8e8e8;
+      --muted: #9a9a9a;
+      --border: #33343a;
+      --accent: #8b85ff;
+      --chip-bg: #232242;
+      --script-bg: #1e1f24;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    line-height: 1.7;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: var(--muted);
+    margin-top: 0;
+    margin-bottom: 32px;
+  }
+  section.segment {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  section.segment h2 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 1.15rem;
+    margin: 0 0 12px;
+  }
+  .time-chip {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--chip-bg);
+    border-radius: 999px;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+  section.segment h3 {
+    font-size: 0.95rem;
+    margin: 18px 0 8px;
+  }
+  ul, ol {
+    margin: 8px 0;
+    padding-left: 1.4em;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+  .block {
+    margin-top: 12px;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .block-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-bottom: 8px;
+  }
+  .block.material {
+    background: color-mix(in srgb, var(--chip-bg) 60%, transparent);
+    border: 1px solid var(--chip-bg);
+  }
+  .block.material .block-label {
+    color: var(--accent);
+    background: var(--chip-bg);
+  }
+  .block.script {
+    background: var(--script-bg);
+    border: 1px solid var(--border);
+  }
+  .block.script .block-label {
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+  .block.script p {
+    margin: 0;
+  }
+  .block ul, .block ol {
+    margin: 0;
+  }
+  .block li:last-child {
+    margin-bottom: 0;
+  }
+  .sources {
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .screen {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .screen strong {
+    color: var(--fg);
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  code {
+    background: var(--chip-bg);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.9em;
+  }
+  .checklist {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  section.checklist h2 {
+    font-size: 1.05rem;
+    margin-top: 0;
+  }
+  .checklist ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .checklist input {
+    margin-top: 5px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>ピッチ動画アウトライン</h1>
+  <p class="subtitle">3分（180秒）／課題20秒 → 解決策20秒 → デモ100秒 → 技術的な工夫30秒 → 結果としめ10秒<br />各セグメントを「資料に記載すること（画面に出す文字・図）」と「話すこと（ナレーションの台本）」に分けている。</p>
+
+  <section class="segment">
+    <h2>課題 <span class="time-chip">0:00–0:20（20秒）</span></h2>
+    <p class="screen">
+      背景メモ（台本には出さない）：日本で複数の Web3 事業に携わってきた実感として、「UX が Web3 普及の最大の壁」という論調が広がっているが、それより手前に、<strong>企業が現状の業務のままでは暗号資産を扱えない</strong>という課題があると感じている。ここにフォーカスする。
+    </p>
+
+    <div class="block material">
+      <span class="block-label">資料に記載すること</span>
+      <ul>
+        <li>見出し：「UX の前に、業務が対応していない」</li>
+        <li>通説：「UX が Web3 普及の最大の壁」という論調が広がっている</li>
+        <li>事実：MetaMask など個人向けウォレットは標準では複数人での運用・承認フローを持たない</li>
+      </ul>
+      <p class="sources">
+        出典（2026年9月確認）：UX が最大の壁という論調について
+        <a href="https://www.forbes.com/sites/garydrenik/2025/11/11/how-ux-upgrades-are-driving-the-next-wave-of-web3-adoption/" target="_blank" rel="noopener">Forbes</a>、
+        <a href="https://www.theblock.co/news/regulation/2025-10-22-smart-wallets-ai-ux-mainstream-crypto-adoption-375647" target="_blank" rel="noopener">The Block</a>。
+        MetaMask がマルチシグ・ロール別承認を標準搭載しない点について
+        <a href="https://docs.metamask.io/smart-accounts-kit/guides/smart-accounts/generate-multisig-signature/" target="_blank" rel="noopener">MetaMask 公式ドキュメント</a>、
+        <a href="https://safe.global/" target="_blank" rel="noopener">Safe{Wallet}</a>
+        （複数人承認は Safe のような別プロダクトを組み合わせて実現する）。
+      </p>
+    </div>
+
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>日本で複数の Web3 事業に携わる中で感じたのは、UX が壁だからではなく、企業が今のままの業務ではウォレットを使えないという、もっと手前の課題です。MetaMask のような個人向けウォレットには複数人での運用や承認フローがなく、そもそも業務に向いていません。</p>
+    </div>
+  </section>
+
+  <section class="segment">
+    <h2>解決策 <span class="time-chip">0:20–0:40（20秒）</span></h2>
+
+    <div class="block material">
+      <span class="block-label">資料に記載すること</span>
+      <ul>
+        <li>bizzet：「ビジネスのための、ウォレット。」</li>
+        <li>個人向けウォレットにない「複数人運用・ロール・承認フロー」を標準搭載</li>
+        <li>図：客 → 店舗のウォレット → 本部のウォレット</li>
+        <li>グループ／ロール（Owner・Approver・Viewer）／2人承認／ENS での受取先の一元管理</li>
+      </ul>
+    </div>
+
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>個人向けウォレットにない、複数人での運用と承認フローを標準で備えたのが bizzet、ビジネスのための、ウォレットです。客の支払いは店舗のウォレットに直接入り、売上は本部に集まります。グループとロールで権限を分け、出金には2人の承認、受取先は ENS で一元管理します。</p>
+    </div>
+  </section>
+
+  <section class="segment">
+    <h2>デモ <span class="time-chip">0:40–2:20（100秒）</span></h2>
+    <p>実際に Sepolia のフォークとテスト用データベースで動く範囲を、客の支払いと事業者の運用の2つの流れで見せる（<code>status.mdx</code> で実装済みの機能のみ）。特に「事業者の運用」が、課題で挙げた複数人運用・ロール・承認フローの実演にあたる。</p>
+
+    <h3>客の支払い（40秒）</h3>
+
+    <div class="block material">
+      <span class="block-label">資料に記載すること</span>
+      <p>デモを実施（値札の QR → 決済ページ → ENS 解決 → 支払い完了）。資料はここで画面共有に切り替えるだけで、スライドの記載は不要。</p>
+    </div>
+
+    <div class="screen">
+      操作手順（進行メモ、画面には出さない）
+      <ol>
+        <li>値札の QR を読み、決済ページ（<code>/pay/[name]</code>）を開く（P-02）</li>
+        <li>店舗の ENS の名前（例 <code>shibuya.bizzet.eth</code>）を Universal Resolver で解決し、受取先と受け取る通貨（JPYC / USDC）を表示（P-06）</li>
+        <li>客のウォレットから ERC-20 を送り、「処理中」→「済」に切り替わる（P-04）</li>
+      </ol>
+    </div>
+
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>値札の QR を読むと決済ページが開きます。店舗の ENS の名前を Universal Resolver で解決し、受け取る通貨と宛先を表示します。客のウォレットから送ると、支払いが「処理中」から「済」に切り替わります。</p>
+    </div>
+
+    <h3>事業者の運用（60秒）</h3>
+
+    <div class="block material">
+      <span class="block-label">資料に記載すること</span>
+      <p>デモを実施（グループ一覧 → 店舗追加 → メンバー追加 → 出金作成 → 署名 → 承認完了）。資料はここで画面共有に切り替えるだけで、スライドの記載は不要。</p>
+    </div>
+
+    <div class="screen">
+      操作手順（進行メモ、画面には出さない）
+      <ol>
+        <li>ダッシュボードのグループ一覧を開き、店舗の ENS 名・Safe の状態・残高を確認（D-11 / DS-11）</li>
+        <li>店舗を1つ追加し、Safe の設定と ENS への登録が進む様子を見せる（D-07 / DS-12）</li>
+        <li>メンバー一覧からメンバーを追加し、グループとロール（Owner / Approver / Viewer）を割り当てる（D-05 / DS-06, 07）</li>
+        <li>出金を作成し、ウォレットでパスキーの署名を求める（D-04, D-09 / DS-09, WS-06）</li>
+        <li>2人目の承認で <code>execTransaction</code> が実行され、出金が完了する（W-04, W-05）</li>
+      </ol>
+    </div>
+
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>ダッシュボードでは店舗ごとの ENS 名や Safe の状態、残高を確認できます。店舗を追加すると、Safe と ENS の登録が自動で進みます。メンバーを追加してロールを割り当て、出金を作成すると、ウォレットでパスキーの署名を求められます。2人目が承認すると、実際にオンチェーンで出金が実行されます。</p>
+    </div>
+
+    <p class="screen">画面：実機（または画面録画）でのクリック操作。テストデータでの通しがすでに動くため、台本どおりに操作する。</p>
+  </section>
+
+  <section class="segment">
+    <h2>技術的な工夫 <span class="time-chip">2:20–2:50（30秒）</span></h2>
+
+    <div class="block material">
+      <span class="block-label">資料に記載すること</span>
+      <ul>
+        <li>見出し：複数人運用を安全に成立させる工夫</li>
+        <li>Safe4337Module の設定を1トランザクションにまとめる</li>
+        <li>パスキー＝Safe のオーナー（秘密鍵を持たない）</li>
+        <li>ENSv2 のリソース単位のロールで受取先を一元管理</li>
+        <li>Roles v2 でキーパー権限を送金先1つに固定</li>
+      </ul>
+    </div>
+
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>この複数人運用を、使いやすく安全に成立させているのが裏側の工夫です。Safe の SDK を使わず、Safe4337Module とパスキー署名者の設定を1つのトランザクションにまとめています。パスキーがそのまま Safe のオーナーになるので、秘密鍵は誰も持ちません。ENSv2 のリソース単位のロールで受取先を一元管理し、将来の自動ブリッジもキーパーの権限を送金先1つに固定して安全に保っています。</p>
+    </div>
+
+    <p class="screen">画面：実際に Sepolia で送信した UserOperation のトランザクションハッシュ（Etherscan の画面）</p>
+  </section>
+
+  <section class="segment">
+    <h2>結果としめ <span class="time-chip">2:50–3:00（10秒）</span></h2>
+
+    <div class="block material">
+      <span class="block-label">資料に記載すること</span>
+      <ul>
+        <li>個人向けウォレットにない複数人運用を、実際に動くところまで実装</li>
+        <li>vitest 32件・フォークテスト13件がすべて通過</li>
+        <li>Sepolia での実送信も確認済み</li>
+        <li>bizzet ― ビジネスのための、ウォレット。</li>
+      </ul>
+    </div>
+
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>個人向けウォレットにはない複数人運用を、実際に Sepolia での送信まで動くところまで作りました。bizzet、ビジネスのための、ウォレット。</p>
+    </div>
+
+    <p class="screen">画面：ロゴと一言のクロージング</p>
+  </section>
+
+  <section class="checklist">
+    <h2>メモ・確認事項</h2>
+    <ul>
+      <li><input type="checkbox" disabled /> デモで使う店舗名・金額・メンバー名を確定する</li>
+      <li><input type="checkbox" disabled /> Sepolia のテストデータ（Safe・メンバー・招待）を録画前にリセットして用意する</li>
+      <li><input type="checkbox" disabled /> Etherscan で見せるトランザクションハッシュのタブを事前に開いておく</li>
+      <li><input type="checkbox" disabled /> 100秒のデモ部分は必ず一度通しで練習し、操作の待ち時間（署名・トランザクション反映）を録画前に把握する</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

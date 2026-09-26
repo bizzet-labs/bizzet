@@ -13,5 +13,11 @@ pnpm-debug.log*
 # Misc
 .DS_Store
 
+# Slidev
+slides/.slidev/
+slides/dist/
+slides/dist-en/
+slides/*.pdf
+
 # Claude Code のエージェント用の作業ツリー
 .claude/worktrees/

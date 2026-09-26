@@ -42,7 +42,7 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.svelte"],
+      "includes": ["**/*.svelte", "**/*.vue"],
       "linter": {
         "rules": {
           "correctness": {
