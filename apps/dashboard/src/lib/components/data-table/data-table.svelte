@@ -6,6 +6,7 @@ import {
   type RowData,
 } from '@tanstack/svelte-table'
 import * as Table from '@/components/ui/table/index.js'
+import { m } from '$lib/paraglide/messages.js'
 import { type DataTableFeatures, features } from './data-table-features.js'
 
 type DataTableProps<TData extends RowData> = {
@@ -17,7 +18,7 @@ type DataTableProps<TData extends RowData> = {
 let {
   data,
   columns,
-  emptyMessage = 'データがありません',
+  emptyMessage = m.common_no_data(),
 }: DataTableProps<TData> = $props()
 
 const table = createTable({

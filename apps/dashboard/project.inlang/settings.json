@@ -1,0 +1,19 @@
+{
+  "$schema": "https://inlang.com/schema/project-settings",
+  "baseLocale": "ja",
+  "locales": ["ja", "en"],
+  "modules": [
+    "https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4/dist/index.js"
+  ],
+  "plugin.inlang.messageFormat": {
+    "pathPattern": [
+      "./messages/common/{locale}.json",
+      "./messages/auth/{locale}.json",
+      "./messages/home/{locale}.json",
+      "./messages/groups/{locale}.json",
+      "./messages/members/{locale}.json",
+      "./messages/transactions/{locale}.json",
+      "./messages/bridge/{locale}.json"
+    ]
+  }
+}

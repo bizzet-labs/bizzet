@@ -1,10 +1,14 @@
 <script lang="ts">
+import CheckIcon from '@lucide/svelte/icons/check'
 import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down'
+import LanguagesIcon from '@lucide/svelte/icons/languages'
 import LogOutIcon from '@lucide/svelte/icons/log-out'
 import * as Avatar from '@/components/ui/avatar/index.js'
 import * as DropdownMenu from '@/components/ui/dropdown-menu/index.js'
 import * as Sidebar from '@/components/ui/sidebar/index.js'
 import { useSidebar } from '@/components/ui/sidebar/index.js'
+import { m } from '$lib/paraglide/messages.js'
+import { getLocale, type Locale, setLocale } from '$lib/paraglide/runtime'
 
 let {
   member,
@@ -13,10 +17,17 @@ let {
 const sidebar = useSidebar()
 
 const ROLE_LABELS = {
-  owner: 'Owner',
-  approver: 'Approver',
-  viewer: 'Viewer',
+  owner: m.common_role_owner,
+  approver: m.common_role_approver,
+  viewer: m.common_role_viewer,
 } as const
+
+// 表示言語は Cookie に保存し、ページを読み込み直して反映する
+const LOCALES: { locale: Locale; label: () => string }[] = [
+  { locale: 'ja', label: m.common_language_ja },
+  { locale: 'en', label: m.common_language_en },
+]
+const currentLocale = getLocale()
 
 const initial = $derived(member.email.charAt(0).toUpperCase())
 
@@ -29,7 +40,7 @@ let logoutForm: HTMLFormElement | undefined = $state()
 	</Avatar.Root>
 	<div class="grid flex-1 text-start text-sm leading-tight">
 		<span class="truncate font-medium">{member.email}</span>
-		<span class="text-muted-foreground truncate text-xs">{ROLE_LABELS[member.role]}</span>
+		<span class="text-muted-foreground truncate text-xs">{ROLE_LABELS[member.role]()}</span>
 	</div>
 {/snippet}
 
@@ -62,9 +73,22 @@ let logoutForm: HTMLFormElement | undefined = $state()
 					</div>
 				</DropdownMenu.Label>
 				<DropdownMenu.Separator />
+				<DropdownMenu.Group>
+					<DropdownMenu.Label class="text-muted-foreground flex items-center gap-2 text-xs font-normal">
+						<LanguagesIcon class="size-3.5" />
+						{m.common_language()}
+					</DropdownMenu.Label>
+					{#each LOCALES as { locale, label } (locale)}
+						<DropdownMenu.Item onSelect={() => setLocale(locale)}>
+							<CheckIcon class={locale === currentLocale ? '' : 'invisible'} />
+							{label()}
+						</DropdownMenu.Item>
+					{/each}
+				</DropdownMenu.Group>
+				<DropdownMenu.Separator />
 				<DropdownMenu.Item onSelect={() => logoutForm?.requestSubmit()}>
 					<LogOutIcon />
-					ログアウト
+					{m.common_logout()}
 				</DropdownMenu.Item>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>

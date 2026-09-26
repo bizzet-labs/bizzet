@@ -1,0 +1,23 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "auth_login_title": "Log in",
+  "auth_email": "Email",
+  "auth_password": "Password",
+  "auth_login_submit": "Log in",
+  "auth_login_failed": "The email or password is incorrect",
+  "auth_invite_title": "Invitation",
+  "auth_invite_heading": "Join the dashboard",
+  "auth_invite_description": "You have been invited as {role} of {group}. Choose a password to log in with",
+  "auth_add_password_heading": "Set a password",
+  "auth_add_password_description": "Choose a password to log in to the dashboard with",
+  "auth_password_with_min": "Password (at least {min} characters)",
+  "auth_password_confirm": "Confirm password",
+  "auth_register_submit": "Register and log in",
+  "auth_password_too_short": "The password must be at least {min} characters",
+  "auth_password_mismatch": "The passwords do not match",
+  "auth_email_taken": "This email is already registered. Please log in from the login page",
+  "auth_invite_not_found": "The invitation was not found",
+  "auth_invite_used": "This invitation has already been used",
+  "auth_invite_expired": "This invitation has expired",
+  "auth_invite_for_wallet": "Please open this link in the wallet"
+}

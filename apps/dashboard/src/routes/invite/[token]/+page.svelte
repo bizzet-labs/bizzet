@@ -3,24 +3,37 @@ import { Button } from '@/components/ui/button/index.js'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field/index.js'
 import { Input } from '@/components/ui/input/index.js'
 import { enhance } from '$app/forms'
+import { m } from '$lib/paraglide/messages.js'
 
 let { data, form } = $props()
 
 let pending = $state(false)
 
-const roleLabel = { owner: 'Owner', approver: 'Approver', viewer: 'Viewer' }
+const ROLE_LABELS = {
+  owner: m.common_role_owner,
+  approver: m.common_role_approver,
+  viewer: m.common_role_viewer,
+} as const
 </script>
 
 <svelte:head>
-	<title>招待 | bizzet</title>
+	<title>{m.common_title({ page: m.auth_invite_title() })}</title>
 </svelte:head>
 
 <main class="mx-auto flex max-w-md flex-col gap-6 p-6 md:p-10">
 	<div class="flex flex-col gap-1">
-		<h1 class="text-2xl font-bold">ダッシュボードに参加する</h1>
-		<p class="text-muted-foreground text-sm">
-			{data.groupName} の {roleLabel[data.role]} として招待されています。ログインに使うパスワードを決めてください
-		</p>
+		{#if data.kind === 'add_password'}
+			<h1 class="text-2xl font-bold">{m.auth_add_password_heading()}</h1>
+			<p class="text-muted-foreground text-sm">{m.auth_add_password_description()}</p>
+		{:else}
+			<h1 class="text-2xl font-bold">{m.auth_invite_heading()}</h1>
+			<p class="text-muted-foreground text-sm">
+				{m.auth_invite_description({
+					group: data.groupName,
+					role: ROLE_LABELS[data.role](),
+				})}
+			</p>
+		{/if}
 	</div>
 
 	<form
@@ -36,28 +49,32 @@ const roleLabel = { owner: 'Owner', approver: 'Approver', viewer: 'Viewer' }
 	>
 		<FieldGroup>
 			<Field>
-				<FieldLabel for="email">メールアドレス</FieldLabel>
-				<Input id="email" type="email" value={data.email} readonly />
+				<FieldLabel for="email">{m.auth_email()}</FieldLabel>
+				<Input id="email" type="email" class="h-10" value={data.email} readonly />
 			</Field>
 			<Field>
-				<FieldLabel for="password">パスワード（8文字以上）</FieldLabel>
+				<FieldLabel for="password">
+					{m.auth_password_with_min({ min: data.passwordMinLength })}
+				</FieldLabel>
 				<Input
 					id="password"
 					name="password"
 					type="password"
+					class="h-10"
 					autocomplete="new-password"
-					minlength={8}
+					minlength={data.passwordMinLength}
 					required
 				/>
 			</Field>
 			<Field>
-				<FieldLabel for="confirm">パスワード（確認）</FieldLabel>
+				<FieldLabel for="confirm">{m.auth_password_confirm()}</FieldLabel>
 				<Input
 					id="confirm"
 					name="confirm"
 					type="password"
+					class="h-10"
 					autocomplete="new-password"
-					minlength={8}
+					minlength={data.passwordMinLength}
 					required
 				/>
 			</Field>
@@ -65,7 +82,9 @@ const roleLabel = { owner: 'Owner', approver: 'Approver', viewer: 'Viewer' }
 				<p class="text-destructive text-sm">{form.message}</p>
 			{/if}
 			<Field>
-				<Button type="submit" disabled={pending}>登録してログイン</Button>
+				<Button type="submit" size="lg" class="h-10" disabled={pending}>
+					{m.auth_register_submit()}
+				</Button>
 			</Field>
 		</FieldGroup>
 	</form>
