@@ -113,7 +113,7 @@
     background: transparent;
     border: 1px solid var(--border);
   }
-  .block.script p {
+  .block p {
     margin: 0;
   }
   .block ul, .block ol {
@@ -122,19 +122,13 @@
   .block li:last-child {
     margin-bottom: 0;
   }
-  .sources {
-    margin: 10px 0 0;
-    font-size: 0.8rem;
-    color: var(--muted);
-    line-height: 1.6;
-  }
   .screen {
     margin-top: 10px;
     font-size: 0.9rem;
     color: var(--muted);
   }
-  .screen strong {
-    color: var(--fg);
+  .screen ol {
+    margin: 4px 0 0;
   }
   a {
     color: var(--accent);
@@ -175,158 +169,124 @@
 <body>
 <main>
   <h1>ピッチ動画アウトライン</h1>
-  <p class="subtitle">3分（180秒）／課題20秒 → 解決策20秒 → デモ100秒 → 技術的な工夫30秒 → 結果としめ10秒<br />各セグメントを「資料に記載すること（画面に出す文字・図）」と「話すこと（ナレーションの台本）」に分けている。</p>
+  <p class="subtitle">3分／課題15秒 → 解決策15秒 → デモ110秒 → 技術30秒 → しめ10秒<br />スライドは見出しと数語だけにし、説明はすべてナレーションで行う。デモは「店舗を作る → 客が払う → 売上を出金する」の1本の流れにする。</p>
 
   <section class="segment">
-    <h2>課題 <span class="time-chip">0:00–0:20（20秒）</span></h2>
-    <p class="screen">
-      背景メモ（台本には出さない）：日本で複数の Web3 事業に携わってきた実感として、「UX が Web3 普及の最大の壁」という論調が広がっているが、それより手前に、<strong>企業が現状の業務のままでは暗号資産を扱えない</strong>という課題があると感じている。ここにフォーカスする。
-    </p>
-
+    <h2>課題 <span class="time-chip">0:00–0:15</span></h2>
     <div class="block material">
-      <span class="block-label">資料に記載すること</span>
+      <span class="block-label">スライド</span>
       <ul>
-        <li>見出し：「UX の前に、業務が対応していない」</li>
-        <li>通説：「UX が Web3 普及の最大の壁」という論調が広がっている</li>
-        <li>事実：MetaMask など個人向けウォレットは標準では複数人での運用・承認フローを持たない</li>
+        <li>見出し：UX の前に、業務が対応していない</li>
+        <li>個人向けウォレット：1人・1つの鍵・承認なし</li>
       </ul>
-      <p class="sources">
-        出典（2026年9月確認）：UX が最大の壁という論調について
-        <a href="https://www.forbes.com/sites/garydrenik/2025/11/11/how-ux-upgrades-are-driving-the-next-wave-of-web3-adoption/" target="_blank" rel="noopener">Forbes</a>、
-        <a href="https://www.theblock.co/news/regulation/2025-10-22-smart-wallets-ai-ux-mainstream-crypto-adoption-375647" target="_blank" rel="noopener">The Block</a>。
-        MetaMask がマルチシグ・ロール別承認を標準搭載しない点について
-        <a href="https://docs.metamask.io/smart-accounts-kit/guides/smart-accounts/generate-multisig-signature/" target="_blank" rel="noopener">MetaMask 公式ドキュメント</a>、
-        <a href="https://safe.global/" target="_blank" rel="noopener">Safe{Wallet}</a>
-        （複数人承認は Safe のような別プロダクトを組み合わせて実現する）。
-      </p>
     </div>
-
     <div class="block script">
       <span class="block-label">話すこと</span>
-      <p>日本で複数の Web3 事業に携わる中で感じたのは、UX が壁だからではなく、企業が今のままの業務ではウォレットを使えないという、もっと手前の課題です。MetaMask のような個人向けウォレットには複数人での運用や承認フローがなく、そもそも業務に向いていません。</p>
+      <p>Web3 の壁は UX だと言われますが、その手前に、企業が今の業務のままではウォレットを使えないという課題があります。個人向けウォレットは1人が1つの鍵を持つ前提で、複数人での運用も承認もありません。</p>
     </div>
   </section>
 
   <section class="segment">
-    <h2>解決策 <span class="time-chip">0:20–0:40（20秒）</span></h2>
-
+    <h2>解決策 <span class="time-chip">0:15–0:30</span></h2>
     <div class="block material">
-      <span class="block-label">資料に記載すること</span>
+      <span class="block-label">スライド</span>
       <ul>
-        <li>bizzet：「ビジネスのための、ウォレット。」</li>
-        <li>個人向けウォレットにない「複数人運用・ロール・承認フロー」を標準搭載</li>
-        <li>図：客 → 店舗のウォレット → 本部のウォレット</li>
-        <li>グループ／ロール（Owner・Approver・Viewer）／2人承認／ENS での受取先の一元管理</li>
+        <li>bizzet ― ビジネスのための、ウォレット。</li>
+        <li>図：客 → 店舗 → 本部（矢印だけ）</li>
+        <li>ロール／2人承認／ENS の名前で受け取り</li>
       </ul>
     </div>
-
     <div class="block script">
       <span class="block-label">話すこと</span>
-      <p>個人向けウォレットにない、複数人での運用と承認フローを標準で備えたのが bizzet、ビジネスのための、ウォレットです。客の支払いは店舗のウォレットに直接入り、売上は本部に集まります。グループとロールで権限を分け、出金には2人の承認、受取先は ENS で一元管理します。</p>
+      <p>bizzet は、ビジネスのためのウォレットです。客の支払いは店舗の名前あてに入り、売上は本部に集まります。メンバーにはロールがあり、出金には2人の承認が要ります。</p>
     </div>
   </section>
 
   <section class="segment">
-    <h2>デモ <span class="time-chip">0:40–2:20（100秒）</span></h2>
-    <p>実際に Sepolia のフォークとテスト用データベースで動く範囲を、客の支払いと事業者の運用の2つの流れで見せる（<code>status.mdx</code> で実装済みの機能のみ）。特に「事業者の運用」が、課題で挙げた複数人運用・ロール・承認フローの実演にあたる。</p>
+    <h2>デモ <span class="time-chip">0:30–2:20</span></h2>
+    <p class="screen">スライドは出さず、1台のパソコンの画面共有だけで、1人で操作する。最初に作った店舗の名前に客が払い、その売上を承認して出金する、という1本の流れで見せる。客のウォレットは同じパソコンの MetaMask、2人の承認は事前にログインしておいた2つのブラウザのウィンドウで行う。</p>
 
-    <h3>客の支払い（40秒）</h3>
-
-    <div class="block material">
-      <span class="block-label">資料に記載すること</span>
-      <p>デモを実施（値札の QR → 決済ページ → ENS 解決 → 支払い完了）。資料はここで画面共有に切り替えるだけで、スライドの記載は不要。</p>
-    </div>
-
+    <h3>1. 店舗を作る（20秒）</h3>
     <div class="screen">
-      操作手順（進行メモ、画面には出さない）
       <ol>
-        <li>値札の QR を読み、決済ページ（<code>/pay/[name]</code>）を開く（P-02）</li>
-        <li>店舗の ENS の名前（例 <code>shibuya.bizzet.eth</code>）を Universal Resolver で解決し、受取先と受け取る通貨（JPYC / USDC）を表示（P-06）</li>
-        <li>客のウォレットから ERC-20 を送り、「処理中」→「済」に切り替わる（P-04）</li>
+        <li>ダッシュボードで店舗を追加し、ラベル（例 <code>shibuya</code>）を入れる</li>
+        <li>グループ一覧に <code>shibuya.bizzet.eth</code> と Safe の状態が出る</li>
       </ol>
     </div>
-
     <div class="block script">
       <span class="block-label">話すこと</span>
-      <p>値札の QR を読むと決済ページが開きます。店舗の ENS の名前を Universal Resolver で解決し、受け取る通貨と宛先を表示します。客のウォレットから送ると、支払いが「処理中」から「済」に切り替わります。</p>
+      <p>本部の Owner が店舗を追加します。ラベルを入れるだけで、ENSv2 のサブネームが登録され、受取先の Safe と通貨がその名前に書き込まれます。</p>
     </div>
 
-    <h3>事業者の運用（60秒）</h3>
-
-    <div class="block material">
-      <span class="block-label">資料に記載すること</span>
-      <p>デモを実施（グループ一覧 → 店舗追加 → メンバー追加 → 出金作成 → 署名 → 承認完了）。資料はここで画面共有に切り替えるだけで、スライドの記載は不要。</p>
-    </div>
-
+    <h3>2. 客が払う（30秒）</h3>
     <div class="screen">
-      操作手順（進行メモ、画面には出さない）
       <ol>
-        <li>ダッシュボードのグループ一覧を開き、店舗の ENS 名・Safe の状態・残高を確認（D-11 / DS-11）</li>
-        <li>店舗を1つ追加し、Safe の設定と ENS への登録が進む様子を見せる（D-07 / DS-12）</li>
-        <li>メンバー一覧からメンバーを追加し、グループとロール（Owner / Approver / Viewer）を割り当てる（D-05 / DS-06, 07）</li>
-        <li>出金を作成し、ウォレットでパスキーの署名を求める（D-04, D-09 / DS-09, WS-06）</li>
-        <li>2人目の承認で <code>execTransaction</code> が実行され、出金が完了する（W-04, W-05）</li>
+        <li>値札のページ <code>/pay</code> で QR を出し、そのリンクから決済ページ <code>/pay/shibuya.bizzet.eth</code> を開く</li>
+        <li>名前から解決した店名・受取先・通貨が出る。USDC で払うと Uniswap v4 の見積もりが出る</li>
+        <li>MetaMask で送ると「処理中」→「済」</li>
       </ol>
     </div>
-
     <div class="block script">
       <span class="block-label">話すこと</span>
-      <p>ダッシュボードでは店舗ごとの ENS 名や Safe の状態、残高を確認できます。店舗を追加すると、Safe と ENS の登録が自動で進みます。メンバーを追加してロールを割り当て、出金を作成すると、ウォレットでパスキーの署名を求められます。2人目が承認すると、実際にオンチェーンで出金が実行されます。</p>
+      <p>客はこの QR を読むだけです。決済ページは店舗の名前を ENS で解決し、宛先と通貨を出します。店舗と違う通貨で払うときは、Uniswap v4 で交換して店舗の Safe に直接届けます。送ると「処理中」から「済」に変わります。</p>
     </div>
 
-    <p class="screen">画面：実機（または画面録画）でのクリック操作。テストデータでの通しがすでに動くため、台本どおりに操作する。</p>
+    <h3>3. 売上を出金する（60秒）</h3>
+    <div class="screen">
+      <ol>
+        <li>ダッシュボードの店舗詳細に、いまの入金と残高が出る</li>
+        <li>出金を作成する（宛先と金額）</li>
+        <li>ウィンドウ A（メンバー1でログイン済み）の承認画面で、パスキーで署名</li>
+        <li>ウィンドウ B（メンバー2でログイン済み）で署名すると実行され、Etherscan に取引が出る</li>
+      </ol>
+    </div>
+    <div class="block script">
+      <span class="block-label">話すこと</span>
+      <p>いまの支払いが、店舗の入金と残高に反映されています。この売上を出金します。ウォレットでは、本部のメンバーがパスキーで承認します。1人では動きません。2人目が承認した時点で、Safe の取引がオンチェーンで実行されます。</p>
+    </div>
   </section>
 
   <section class="segment">
-    <h2>技術的な工夫 <span class="time-chip">2:20–2:50（30秒）</span></h2>
-
+    <h2>技術 <span class="time-chip">2:20–2:50</span></h2>
     <div class="block material">
-      <span class="block-label">資料に記載すること</span>
+      <span class="block-label">スライド</span>
       <ul>
-        <li>見出し：複数人運用を安全に成立させる工夫</li>
-        <li>Safe4337Module の設定を1トランザクションにまとめる</li>
-        <li>パスキー＝Safe のオーナー（秘密鍵を持たない）</li>
-        <li>ENSv2 のリソース単位のロールで受取先を一元管理</li>
-        <li>Roles v2 でキーパー権限を送金先1つに固定</li>
+        <li>パスキー ＝ Safe のオーナー（秘密鍵なし）</li>
+        <li>店舗の Safe は本部の Safe が承認（入れ子の署名）</li>
+        <li>ENSv2：店舗ごとの名前に受取先と通貨</li>
+        <li>Uniswap v4：交換した通貨を店舗に直接</li>
       </ul>
     </div>
-
     <div class="block script">
       <span class="block-label">話すこと</span>
-      <p>この複数人運用を、使いやすく安全に成立させているのが裏側の工夫です。Safe の SDK を使わず、Safe4337Module とパスキー署名者の設定を1つのトランザクションにまとめています。パスキーがそのまま Safe のオーナーになるので、秘密鍵は誰も持ちません。ENSv2 のリソース単位のロールで受取先を一元管理し、将来の自動ブリッジもキーパーの権限を送金先1つに固定して安全に保っています。</p>
+      <p>裏側は4つです。パスキーがそのまま Safe のオーナーになるので、誰も秘密鍵を持ちません。店舗の Safe のオーナーは本部の Safe で、本部の2人の署名を入れ子にして店舗の取引を通します。ENSv2 では自前のサブネームのレジストリを持ち、店舗ごとの名前に受取先と通貨を書きます。Uniswap v4 は Universal Router の1回の取引で、交換した通貨を店舗の Safe に直接届けます。</p>
     </div>
-
-    <p class="screen">画面：実際に Sepolia で送信した UserOperation のトランザクションハッシュ（Etherscan の画面）</p>
   </section>
 
   <section class="segment">
-    <h2>結果としめ <span class="time-chip">2:50–3:00（10秒）</span></h2>
-
+    <h2>しめ <span class="time-chip">2:50–3:00</span></h2>
     <div class="block material">
-      <span class="block-label">資料に記載すること</span>
+      <span class="block-label">スライド</span>
       <ul>
-        <li>個人向けウォレットにない複数人運用を、実際に動くところまで実装</li>
-        <li>vitest 32件・フォークテスト13件がすべて通過</li>
-        <li>Sepolia での実送信も確認済み</li>
+        <li>Sepolia フォークテスト 23件、vitest 76件がすべて通過</li>
         <li>bizzet ― ビジネスのための、ウォレット。</li>
       </ul>
     </div>
-
     <div class="block script">
       <span class="block-label">話すこと</span>
-      <p>個人向けウォレットにはない複数人運用を、実際に Sepolia での送信まで動くところまで作りました。bizzet、ビジネスのための、ウォレット。</p>
+      <p>すべて Sepolia で動くコードとテストで裏付けています。bizzet、ビジネスのための、ウォレット。</p>
     </div>
-
-    <p class="screen">画面：ロゴと一言のクロージング</p>
   </section>
 
   <section class="checklist">
-    <h2>メモ・確認事項</h2>
+    <h2>録画前の確認</h2>
     <ul>
-      <li><input type="checkbox" disabled /> デモで使う店舗名・金額・メンバー名を確定する</li>
-      <li><input type="checkbox" disabled /> Sepolia のテストデータ（Safe・メンバー・招待）を録画前にリセットして用意する</li>
-      <li><input type="checkbox" disabled /> Etherscan で見せるトランザクションハッシュのタブを事前に開いておく</li>
-      <li><input type="checkbox" disabled /> 100秒のデモ部分は必ず一度通しで練習し、操作の待ち時間（署名・トランザクション反映）を録画前に把握する</li>
+      <li><input type="checkbox" disabled /> 店舗名・金額・メンバー名を決める</li>
+      <li><input type="checkbox" disabled /> 本部のメンバー3人を作り、同じパソコンでそれぞれのパスキーを登録して、本部の Safe を配置しておく（承認に使うのは2人）</li>
+      <li><input type="checkbox" disabled /> ブラウザのウィンドウを2つ開き、メンバー1と2でそれぞれウォレットにログインしておく（通常とシークレットなど、別のプロファイルにする）</li>
+      <li><input type="checkbox" disabled /> <code>ens:setup</code> で本部の名前を登録し、<code>uniswap:liquidity</code> で流動性を足しておく</li>
+      <li><input type="checkbox" disabled /> 同じパソコンの MetaMask に JPYC か USDC と、ガス代の Sepolia ETH を入れておく</li>
+      <li><input type="checkbox" disabled /> 通しで1回練習し、署名と取引の待ち時間を把握する</li>
     </ul>
   </section>
 </main>

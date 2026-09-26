@@ -15,127 +15,107 @@ mdc: true
 <div class="opacity-60">ETHGlobal Tokyo 2026</div>
 
 <!--
-180 seconds total. Problem 20s → Solution 20s → Demo 100s → Technical highlights 30s → Results & close 10s.
+180 seconds total. Problem 15s → Solution 15s → Demo 110s → Tech 30s → Close 10s.
+Slides carry only a headline and a few words; everything else is narrated.
 -->
 
 ---
 
 # Problem
 
-### It's not UX. It's that businesses aren't supported.
+### It's not UX. Businesses can't operate a wallet.
 
-<div class="leading-relaxed">
+<div class="leading-relaxed text-[1.1em]">
 
-- The common narrative is that "UX is the biggest barrier to Web3 adoption"
-- But personal wallets like <b>MetaMask</b> simply don't support <b>multi-user operation or approval flows</b>
-- Routing payments through a processor means underwriting and fees, with no concept of "who is allowed to withdraw"
+Personal wallets: one person, one key, no approvals
 
 </div>
 
-<!-- Say: Having worked across several Web3 businesses in Japan, the real issue isn't UX friction — it's that businesses can't run on wallets built for individuals. A wallet like MetaMask has no concept of multi-user operation or approval, so it simply isn't built for business use. -->
+<!-- Say: People say UX is the barrier to Web3. Before that, there is a simpler problem: a business can't use a wallet the way it runs today. Personal wallets assume one person holding one key, with no shared operation and no approvals. -->
 
 ---
 
 # Solution
 
-## bizzet: a wallet built for business.
-
-<div class="leading-relaxed">
-
-Ships with <b>multi-user operation, roles, and approval flows</b> that personal wallets lack
-
-</div>
+## bizzet — a wallet built for business.
 
 <FlowDiagram
   customer-label="🧑<br />Customer"
-  store-label="🏪<br />Store Wallet"
-  hq-label="🏢<br />HQ Wallet"
+  store-label="🏪<br />Store"
+  hq-label="🏢<br />HQ"
 />
 
 <div class="leading-relaxed">
 
-Groups, roles (Owner / Approver / Viewer), two-approval withdrawals, and a single payout address via ENS
+Roles / two-person approval / receive by ENS name
 
 </div>
 
-<!-- Say: bizzet ships with the multi-user operation and approval flow that personal wallets lack. Customer payments land directly in the store's wallet, and sales flow up into the HQ wallet. Groups and roles split up permissions, withdrawals need two approvals, and payout addresses live in one place via ENS. -->
-
----
-
-# Demo ①: Customer payment
-
-<div class="leading-relaxed">
-
-1. Scan the price tag's QR code to open the checkout page
-2. Resolve the store's ENS name to show the payout address and currency
-3. Send from the wallet; the page flips from "processing" to "paid"
-
-</div>
-
-<!-- Say: Scanning the QR opens the checkout page. It resolves the store's ENS name via the Universal Resolver to show the currency and destination. Sending from the customer's wallet flips the page from "processing" to "paid". -->
-
----
-
-# Demo ②: Running the business
-
-<div class="leading-relaxed text-[0.85em]">
-
-1. Check each store's ENS name, Safe status, and balance in the group list
-2. Add a store; its Safe and ENS registration run automatically
-3. Add a member, assigning a group and a role
-4. Create a withdrawal; the wallet prompts for a passkey signature
-5. The second approval executes the withdrawal
-
-</div>
-
-<!-- Say: The dashboard shows each store's ENS name, Safe status, and balance. Adding a store runs the Safe setup and ENS registration automatically. Adding a member assigns a group and role, and creating a withdrawal prompts a passkey signature in the wallet. The second approval executes it on-chain. -->
-
----
-
-# Technical highlights
-
-### Making multi-user operation both usable and safe
-
-<div class="leading-relaxed text-[0.85em]">
-
-- Bundles the Safe4337Module setup and passkey signer creation into <b>a single transaction</b>
-- <b>A passkey becomes the Safe owner directly</b> — no one holds a private key
-- ENSv2's <b>resource-scoped roles</b> restrict who can write the payout record
-- The keeper's permission is scoped to "send to the home Safe only," so a stolen key can't reach the funds
-
-</div>
-
-<!-- Say: What makes this multi-user operation both usable and safe is the work underneath. No Safe SDK — Safe4337Module setup and passkey signer creation are bundled into one transaction. A passkey becomes the Safe owner directly, so no one holds a private key. ENSv2's resource-scoped roles keep the payout address in one place, and the future auto-bridge keeper's permission is scoped to a single destination so a stolen key can't reach the funds. -->
+<!-- Say: bizzet is a wallet built for business. Customers pay to a store's name, and sales roll up to headquarters. Members have roles, and a payout needs two approvals. -->
 
 ---
 layout: center
 class: text-center
 ---
 
-# Results & close
+# Demo
 
-<div class="leading-relaxed">
+<div class="leading-relaxed text-[1.1em]">
 
-The multi-user operation personal wallets lack, <br />
-<b>built and working end to end</b>
+Create a store → a customer pays → pay out the sales
 
-</div>
-
-<div class="opacity-70 text-[0.7em]">
-32 vitest tests and 13 contract fork tests all pass<br />
-A real transaction has been confirmed on Sepolia
-</div>
-
-<div class="text-[1.3em]">
-bizzet ― a wallet built for business.
 </div>
 
 <!--
-Say: We built the multi-user operation personal wallets lack, all the way to a real transaction on Sepolia. bizzet — a wallet built for business.
+Screen share from here. One person, one laptop.
 
-Presenter notes (not shown in the recording)
-- Lock in the store name, amount, and member name used in the demo.
-- Reset the Sepolia test data (Safe, members, invitations) right before recording.
-- Have the Etherscan tab with the transaction hash open ahead of time.
-- Rehearse the 100-second demo section at least once, and know the wait times (signing, on-chain confirmation) before recording.
+1. Create a store (20s)
+   Add a store in the dashboard with a label (e.g. shibuya). The group list shows shibuya.bizzet.eth and the Safe status.
+   Say: An HQ Owner adds a store. Typing a label is all it takes: an ENSv2 subname is registered, and the receiving Safe and currency are written to that name.
+
+2. A customer pays (30s)
+   Open the price-tag page /pay, show the QR, follow its link to /pay/shibuya.bizzet.eth. The store name, recipient and currency appear. Paying in USDC shows a Uniswap v4 quote. Send from MetaMask: "Pending" → "Paid".
+   Say: The customer just scans this QR. The payment page resolves the store's name through ENS and shows the recipient and currency. If the customer pays in the other currency, Uniswap v4 swaps it and delivers it straight to the store's Safe. After sending, the status goes from pending to paid.
+
+3. Pay out the sales (60s)
+   The store page shows the deposit and balance. Create a payout. In window A (member 1) sign with a passkey on the approval screen. In window B (member 2) sign again: it executes, and the transaction appears on Etherscan.
+   Say: That payment is already in the store's deposits and balance. Now we pay it out. In the wallet, HQ members approve with their passkeys. One is not enough. The moment the second member approves, the Safe transaction executes on-chain.
+-->
+
+---
+
+# Tech
+
+<div class="leading-relaxed">
+
+- Passkey = Safe owner (no private keys)
+- Store Safes are approved by the HQ Safe (nested signature)
+- ENSv2: each store's name holds its recipient and currency
+- Uniswap v4: swapped funds go straight to the store
+
+</div>
+
+<!-- Say: Four things under the hood. Passkeys are the Safe owners, so nobody holds a private key. A store Safe's owner is the HQ Safe, and two HQ signatures are nested to pass the store's transaction. On ENSv2 we run our own subname registry and write each store's recipient and currency to its name. Uniswap v4 swaps in one Universal Router transaction and delivers the output straight to the store's Safe. -->
+
+---
+layout: center
+class: text-center
+---
+
+# bizzet — a wallet built for business.
+
+<div class="opacity-70 text-[0.7em]">
+23 Sepolia fork tests and 76 vitest tests, all passing
+</div>
+
+<!--
+Say: All of it is backed by code and tests running on Sepolia. bizzet, a wallet built for business.
+
+Before recording
+- Decide the store name, amount and member names
+- Create three HQ members, register each passkey on this laptop, and deploy the HQ Safe (two of them will approve)
+- Run ens:setup to register the HQ name and uniswap:liquidity to add pool liquidity
+- Open two browser windows (separate profiles) logged in to the wallet as member 1 and member 2
+- Fund MetaMask on this laptop with JPYC or USDC plus Sepolia ETH for gas
+- Rehearse once end to end and note the waits for signing and confirmations
 -->
