@@ -1,3 +1,6 @@
 {
-  "$schema": "https://inlang.com/schema/inlang-message-format"
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "bridge_description": "Check sales moving from other chains to the headquarters wallet",
+  "bridge_empty_title": "Nothing in transit",
+  "bridge_empty_description": "The beta runs on Sepolia only and auto-bridging isn't enabled yet. Once payments on other chains are supported, sales in transit will be listed here."
 }

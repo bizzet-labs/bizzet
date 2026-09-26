@@ -1,3 +1,6 @@
 {
-  "$schema": "https://inlang.com/schema/inlang-message-format"
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "bridge_description": "別のチェーンから本部のウォレットへ移動中の売上を確認します",
+  "bridge_empty_title": "移動中の売上はありません",
+  "bridge_empty_description": "ベータ版は Sepolia だけで動いていて、自動ブリッジはまだ有効になっていません。別のチェーンでの着金を扱うようになると、移動中の売上がここに並びます"
 }
