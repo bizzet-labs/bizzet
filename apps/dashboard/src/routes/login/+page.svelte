@@ -2,7 +2,7 @@
 import GalleryVerticalEndIcon from '@lucide/svelte/icons/gallery-vertical-end'
 import LoginForm from '@/components/login-form.svelte'
 
-let { data, form } = $props()
+let { form } = $props()
 </script>
 
 <div class="grid min-h-svh lg:grid-cols-2">
@@ -19,7 +19,7 @@ let { data, form } = $props()
 		</div>
 		<div class="flex flex-1 items-center justify-center">
 			<div class="w-full max-w-xs">
-				<LoginForm challenge={data.challenge} message={form?.message} />
+				<LoginForm email={form?.email} message={form?.message} />
 			</div>
 		</div>
 	</div>

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { invitations } from '@bizzet/db'
 import { error, fail } from '@sveltejs/kit'
-import { env } from '$env/dynamic/private'
+import { normalizeEmail } from '$lib/server/auth'
 import type { Actions, PageServerLoad } from './$types'
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 }
 
 export const actions: Actions = {
-  default: async ({ locals, request }) => {
+  default: async ({ locals, request, url }) => {
     const owner = requireOwner(locals.member)
 
     const form = await request.formData()
@@ -42,14 +42,13 @@ export const actions: Actions = {
     const token = randomBytes(32).toString('base64url')
     await locals.db.insert(invitations).values({
       token,
-      email,
+      email: normalizeEmail(email),
       groupId,
       role: role as Role,
       invitedBy: owner.id,
       expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     })
 
-    const walletUrl = env.WALLET_URL ?? 'http://localhost:5175'
-    return { inviteUrl: `${walletUrl}/invite/${token}`, email }
+    return { inviteUrl: `${url.origin}/invite/${token}`, email }
   },
 }

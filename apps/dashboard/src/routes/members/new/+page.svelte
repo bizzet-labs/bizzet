@@ -11,7 +11,7 @@ let { data, form } = $props()
 	<div class="flex flex-col gap-1">
 		<h1 class="text-2xl font-bold">メンバーを招待する</h1>
 		<p class="text-muted-foreground text-sm">
-			招待リンクを送ると、メンバーはウォレットでパスキーを登録して参加できます（7日間有効）
+			招待リンクを送ると、メンバーはパスワードを決めてダッシュボードに参加できます（7日間有効）
 		</p>
 	</div>
 
