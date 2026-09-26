@@ -11,10 +11,21 @@ sidebar_label: Risks
 | スコープが横に広がり、値札もウォレットも半端に終わる | 高 | 機能は1つずつ、役割は3つ、拠点は2つから |
 | 「通貨を切り替えて表示する値札」に見え、技術的に新しくないと受け取られる | 中 | 価値はレジをなくすことと、客と店が別の通貨で同じ商品を見ていることにある。切替表示は演出として残し、中身は決済まで作る |
 | JPYC/USDC の Uniswap プールが薄く、交換が失敗する | 高 | bizzet 自身がプールに流動性を提供して厚くする |
-| 自動ブリッジの到着が遅れる・止まる | 中 | 「ブリッジ待ち」の残高を台帳に明示 |
+| 自動ブリッジの到着が遅れる・止まる（本番） | 中 | 「ブリッジ待ち」の売上を、ダッシュボードで残高と分けて見せる |
 | Roles や Sweep の権限設定に穴がある | 中 | 拒否されるべき操作を先にテストに書く |
+| 中継用アカウントの鍵が漏れる | 中 | オーナーの署名がない取引は Safe が拒むため、グループの資金には届かない。漏れた場合は鍵を替え、Paymaster の対象を新しいアカウントに移す |
+| 本部の Owner か Approver がパスキーを失う | 中 | 本部の Safe のオーナーを3人以上にし、残る2人で承認を続ける |
 | ブロックを待つ間に「決済が遅い」印象になる | 中 | 支払いを受け付けた時点で「処理中」を出し、ブロックが出たら「済」に部分書き換えする |
 | 店の回線が不安定で値札が `Paid` を拾えない | 中 | 購読が切れたら最終ブロックから再取得 |
 | 「ステーブルコインで受け取って法的に大丈夫か」と聞かれる | 低 | JPYC の資金移動業型という事実だけ述べ、法的助言に踏み込まない |
 
-交換の失敗時は revert して値札が「済」にならないため、客の資金は動きません。ブリッジの到着待ちも資金の消失ではなく、画面でそう分かるようにします。権限のテストで先に書くのは、スタッフの出金・支店長の他店価格変更・キーパーの宛先変更の3つです。
+交換の失敗時は revert して値札が「済」にならないため、客の資金は動きません。ブリッジの到着待ちも資金の消失ではなく、画面でそう分かるようにします。権限のテストで先に書くのは、店舗のスタッフによる出金の実行・運用者以外による価格の変更・キーパーの宛先の変更の3つです。
+
+## 根拠にした事例
+
+| 事例 | 何の根拠か | 出典 |
+| --- | --- | --- |
+| ローソンの USDC・USDT・JPYC 決済の実証 | 小売の店頭でステーブルコイン決済が試されていること | [crypto.news](https://crypto.news/japanese-retailer-lawson-adds-usdc-usdt-and-jpyc-to-stablecoin-payment-trial/) |
+| MerchantsPay、Bounce、Crypto PoS、Ethercard | 「値札やレジの暗号資産決済」自体は新しくないこと | [MerchantsPay](https://ethglobal.com/showcase/merchantspay-yfeym)、[Bounce](https://ethglobal.com/showcase/bounce-jxqoc)、[Crypto PoS](https://ethglobal.com/showcase/crypto-pos-3tjaj)、[Ethercard](https://ethglobal.com/showcase/ethercard-zv78k)（ETHGlobal の作品紹介） |
+| JPYC の正式リリースと資金移動業の登録 | JPYC が資金移動業型の日本円ステーブルコインであること | [JPYC株式会社](https://corporate.jpyc.co.jp/news/posts/jpyc-ex-launch)、[日経](https://www.nikkei.com/article/DGXZQOUB186IJ0Y5A810C2000000/) |
+| 日本円ステーブルコイン4種の整理 | 日本円ステーブルコインの種類と位置づけ | [Zenn（komlock lab）](https://zenn.dev/komlock_lab/articles/japan-yen-stablecoin-landscape-2026) |
