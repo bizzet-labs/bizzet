@@ -1,0 +1,23 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "auth_login_title": "ログイン",
+  "auth_email": "メールアドレス",
+  "auth_password": "パスワード",
+  "auth_login_submit": "ログイン",
+  "auth_login_failed": "メールアドレスまたはパスワードが違います",
+  "auth_invite_title": "招待",
+  "auth_invite_heading": "ダッシュボードに参加する",
+  "auth_invite_description": "{group} の {role} として招待されています。ログインに使うパスワードを決めてください",
+  "auth_add_password_heading": "パスワードを設定する",
+  "auth_add_password_description": "ダッシュボードのログインに使うパスワードを決めてください",
+  "auth_password_with_min": "パスワード（{min}文字以上）",
+  "auth_password_confirm": "パスワード（確認）",
+  "auth_register_submit": "登録してログイン",
+  "auth_password_too_short": "パスワードは {min} 文字以上にしてください",
+  "auth_password_mismatch": "確認用のパスワードが一致しません",
+  "auth_email_taken": "このメールアドレスは既に登録されています。ログイン画面からログインしてください",
+  "auth_invite_not_found": "招待が見つかりません",
+  "auth_invite_used": "この招待は既に使われています",
+  "auth_invite_expired": "この招待は期限が切れています",
+  "auth_invite_for_wallet": "このリンクはウォレットで開いてください"
+}

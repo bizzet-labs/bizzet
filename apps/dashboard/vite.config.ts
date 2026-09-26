@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import adapter from '@sveltejs/adapter-auto'
 import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
@@ -14,6 +15,14 @@ export default defineConfig({
     strictPort: true,
   },
   plugins: [
+    // 表示言語は Cookie（言語の切り替えで保存）→ ブラウザの言語設定 → 日本語の順に決める。
+    // URL には言語を含めない
+    paraglideVitePlugin({
+      project: './project.inlang',
+      outdir: './src/lib/paraglide',
+      emitTsDeclarations: true,
+      strategy: ['cookie', 'preferredLanguage', 'baseLocale'],
+    }),
     tailwindcss(),
     sveltekit({
       compilerOptions: {

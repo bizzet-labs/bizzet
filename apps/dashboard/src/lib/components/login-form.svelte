@@ -4,6 +4,7 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field/index.js'
 import { Input } from '@/components/ui/input/index.js'
 import { cn } from '@/utils.js'
 import { enhance } from '$app/forms'
+import { m } from '$lib/paraglide/messages.js'
 
 let {
   email = '',
@@ -28,7 +29,7 @@ let pending = $state(false)
 			}}
 		>
 			<Field>
-				<FieldLabel for="email">メールアドレス</FieldLabel>
+				<FieldLabel for="email">{m.auth_email()}</FieldLabel>
 				<Input
 					id="email"
 					name="email"
@@ -40,7 +41,7 @@ let pending = $state(false)
 				/>
 			</Field>
 			<Field>
-				<FieldLabel for="password">パスワード</FieldLabel>
+				<FieldLabel for="password">{m.auth_password()}</FieldLabel>
 				<Input
 					id="password"
 					name="password"
@@ -54,7 +55,7 @@ let pending = $state(false)
 				<p class="text-destructive text-center text-sm">{message}</p>
 			{/if}
 			<Field>
-				<Button type="submit" size="lg" class="h-10" disabled={pending}>ログイン</Button>
+				<Button type="submit" size="lg" class="h-10" disabled={pending}>{m.auth_login_submit()}</Button>
 			</Field>
 		</form>
 	</FieldGroup>

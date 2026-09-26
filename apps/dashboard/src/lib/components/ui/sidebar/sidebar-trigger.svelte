@@ -15,6 +15,8 @@ let {
 } = $props()
 
 const sidebar = useSidebar()
+
+import { m } from '$lib/paraglide/messages.js'
 </script>
 
 <Button
@@ -32,5 +34,5 @@ const sidebar = useSidebar()
 	{...restProps}
 >
 	<PanelLeftIcon class="cn-rtl-flip" />
-	<span class="sr-only">Toggle Sidebar</span>
+	<span class="sr-only">{m.common_toggle_sidebar()}</span>
 </Button>

@@ -2,12 +2,13 @@
 import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard'
 import LoginForm from '@/components/login-form.svelte'
 import * as Card from '@/components/ui/card/index.js'
+import { m } from '$lib/paraglide/messages.js'
 
 let { form } = $props()
 </script>
 
 <svelte:head>
-	<title>ログイン | bizzet</title>
+	<title>{m.common_title({ page: m.auth_login_title() })}</title>
 </svelte:head>
 
 <main class="bg-muted/30 flex min-h-svh flex-col items-center justify-center gap-6 p-6">
@@ -17,7 +18,7 @@ let { form } = $props()
 			<div class="bg-primary/10 text-primary mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
 				<LayoutDashboardIcon class="size-6" />
 			</div>
-			<Card.Title class="text-xl font-semibold">ログイン</Card.Title>
+			<Card.Title class="text-xl font-semibold">{m.auth_login_title()}</Card.Title>
 		</Card.Header>
 		<Card.Content>
 			<LoginForm email={form?.email} message={form?.message} />
