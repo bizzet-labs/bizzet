@@ -1,7 +1,11 @@
 .figure {
   --bridge-gap: 1rem;
   --bridge-tint: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
-  --bridge-tint-strong: color-mix(in srgb, var(--ifm-color-primary) 18%, transparent);
+  --bridge-tint-strong: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 18%,
+    transparent
+  );
   margin: 2rem 0;
   font-size: 0.8rem;
 }
@@ -75,7 +79,7 @@
 
 .directLine::after,
 .arrowLine::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 50%;

@@ -1,21 +1,21 @@
-import type {ReactNode} from 'react';
-import styles from './styles.module.css';
+import type { ReactNode } from 'react'
+import styles from './styles.module.css'
 
 type Chain = {
-  name: string;
-  arrival: string;
-  home?: boolean;
-};
+  name: string
+  arrival: string
+  home?: boolean
+}
 
 const chains: Chain[] = [
-  {name: 'ホームチェーン', arrival: '決済時に交換済み', home: true},
-  {name: 'チェーンB', arrival: 'USDC で着金'},
-  {name: 'チェーンC', arrival: 'USDC で着金'},
-];
+  { name: 'ホームチェーン', arrival: '決済時に交換済み', home: true },
+  { name: 'チェーンB', arrival: 'USDC で着金' },
+  { name: 'チェーンC', arrival: 'USDC で着金' },
+]
 
-const steps = ['ホームチェーンへ移す', 'JPYC で受け取るなら替える'];
+const steps = ['ホームチェーンへ移す', 'JPYC で受け取るなら替える']
 
-function Icon({children}: {children: ReactNode}): ReactNode {
+function Icon({ children }: { children: ReactNode }): ReactNode {
   return (
     <svg
       className={styles.icon}
@@ -25,10 +25,11 @@ function Icon({children}: {children: ReactNode}): ReactNode {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      aria-hidden="true">
+      aria-hidden="true"
+    >
       {children}
     </svg>
-  );
+  )
 }
 
 const ChainIcon = () => (
@@ -36,7 +37,7 @@ const ChainIcon = () => (
     <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
     <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
   </Icon>
-);
+)
 
 const WalletIcon = () => (
   <Icon>
@@ -44,22 +45,22 @@ const WalletIcon = () => (
     <path d="M3 10h18" />
     <path d="M16 14.5h2" />
   </Icon>
-);
+)
 
 const LockIcon = () => (
   <Icon>
     <rect x="5" y="11" width="14" height="9" rx="2" />
     <path d="M8 11V8a4 4 0 0 1 8 0v3" />
   </Icon>
-);
+)
 
-function Arrow({label}: {label?: string}): ReactNode {
+function Arrow({ label }: { label?: string }): ReactNode {
   return (
     <div className={styles.arrow}>
       <span className={styles.arrowLine} aria-hidden="true" />
       {label && <span className={styles.arrowLabel}>{label}</span>}
     </div>
-  );
+  )
 }
 
 export default function BridgeDiagram(): ReactNode {
@@ -69,7 +70,8 @@ export default function BridgeDiagram(): ReactNode {
         {chains.map((chain) => (
           <div
             key={chain.name}
-            className={chain.home ? styles.chainHome : styles.chain}>
+            className={chain.home ? styles.chainHome : styles.chain}
+          >
             <div className={styles.chainHeader}>
               <span className={styles.chainIcon}>
                 <ChainIcon />
@@ -109,5 +111,5 @@ export default function BridgeDiagram(): ReactNode {
         </div>
       </div>
     </figure>
-  );
+  )
 }

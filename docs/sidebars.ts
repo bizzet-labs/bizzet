@@ -1,4 +1,4 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs'
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -43,10 +43,10 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Design',
       collapsed: false,
-      link: {type: 'doc', id: 'design'},
+      link: { type: 'doc', id: 'design' },
       items: ['features', 'screens'],
     },
   ],
-};
+}
 
-export default sidebars;
+export default sidebars
