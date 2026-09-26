@@ -3,7 +3,11 @@
   --flow-inset: calc(1.25rem + 1px);
   --flow-top: 2.25rem;
   --flow-tint: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
-  --flow-tint-strong: color-mix(in srgb, var(--ifm-color-primary) 18%, transparent);
+  --flow-tint-strong: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 18%,
+    transparent
+  );
   margin: 2rem 0;
   font-size: 0.8rem;
 }
@@ -74,7 +78,7 @@
 }
 
 .arrowLine::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -85,6 +89,7 @@
   transform: translateX(-50%) rotate(45deg);
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: this is the default; .arrow .arrowLabel overrides it above */
 .arrowLabel {
   position: absolute;
   top: 30%;

@@ -1,40 +1,40 @@
-import type {ReactNode} from 'react';
-import styles from './styles.module.css';
+import type { ReactNode } from 'react'
+import styles from './styles.module.css'
 
-type Level = 'Owner' | 'Approver' | 'Viewer';
+type Level = 'Owner' | 'Approver' | 'Viewer'
 
 type Member = {
-  role: string;
-  level: Level;
-  scope: '全店' | '自店';
-};
+  role: string
+  level: Level
+  scope: '全店' | '自店'
+}
 
 type Unit = {
-  name: string;
-  kind: 'shop' | 'headquarters';
-  members: Member[];
-};
+  name: string
+  kind: 'shop' | 'headquarters'
+  members: Member[]
+}
 
 const shopMembers: Member[] = [
-  {role: '店長', level: 'Viewer', scope: '自店'},
-  {role: 'スタッフ', level: 'Viewer', scope: '自店'},
-];
+  { role: '店長', level: 'Viewer', scope: '自店' },
+  { role: 'スタッフ', level: 'Viewer', scope: '自店' },
+]
 
 const shops: Unit[] = [
-  {name: '店舗A', kind: 'shop', members: shopMembers},
-  {name: '店舗B', kind: 'shop', members: shopMembers},
-];
+  { name: '店舗A', kind: 'shop', members: shopMembers },
+  { name: '店舗B', kind: 'shop', members: shopMembers },
+]
 
 const headquarters: Unit = {
   name: '本部',
   kind: 'headquarters',
   members: [
-    {role: '経営', level: 'Owner', scope: '全店'},
-    {role: '会計部', level: 'Approver', scope: '全店'},
+    { role: '経営', level: 'Owner', scope: '全店' },
+    { role: '会計部', level: 'Approver', scope: '全店' },
   ],
-};
+}
 
-function Icon({children}: {children: ReactNode}): ReactNode {
+function Icon({ children }: { children: ReactNode }): ReactNode {
   return (
     <svg
       className={styles.icon}
@@ -44,10 +44,11 @@ function Icon({children}: {children: ReactNode}): ReactNode {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      aria-hidden="true">
+      aria-hidden="true"
+    >
       {children}
     </svg>
-  );
+  )
 }
 
 const PersonIcon = () => (
@@ -55,7 +56,7 @@ const PersonIcon = () => (
     <circle cx="12" cy="8" r="4" />
     <path d="M4.5 20.5c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7" />
   </Icon>
-);
+)
 
 const ShopIcon = () => (
   <Icon>
@@ -64,7 +65,7 @@ const ShopIcon = () => (
     <path d="M5 12v8h14v-8" />
     <path d="M10 20v-4.5h4V20" />
   </Icon>
-);
+)
 
 const BuildingIcon = () => (
   <Icon>
@@ -72,7 +73,7 @@ const BuildingIcon = () => (
     <path d="M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M9 15h1.5M13.5 15H15" />
     <path d="M10.5 21v-2.5h3V21" />
   </Icon>
-);
+)
 
 const WalletIcon = () => (
   <Icon>
@@ -80,19 +81,19 @@ const WalletIcon = () => (
     <path d="M3 10h18" />
     <path d="M16 14.5h2" />
   </Icon>
-);
+)
 
-function Arrow({label, tall}: {label: string; tall?: boolean}): ReactNode {
+function Arrow({ label, tall }: { label: string; tall?: boolean }): ReactNode {
   return (
     <div className={tall ? styles.arrowTall : styles.arrow}>
       <span className={styles.arrowLine} aria-hidden="true" />
       <span className={styles.arrowLabel}>{label}</span>
     </div>
-  );
+  )
 }
 
-function UnitCard({unit}: {unit: Unit}): ReactNode {
-  const isHeadquarters = unit.kind === 'headquarters';
+function UnitCard({ unit }: { unit: Unit }): ReactNode {
+  const isHeadquarters = unit.kind === 'headquarters'
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
@@ -112,7 +113,9 @@ function UnitCard({unit}: {unit: Unit}): ReactNode {
               <PersonIcon />
             </span>
             <span className={styles.role}>{member.role}</span>
-            <span className={`${styles.level} ${styles[`level${member.level}`]}`}>
+            <span
+              className={`${styles.level} ${styles[`level${member.level}`]}`}
+            >
               {member.level}
             </span>
             <span className={styles.scope}>{member.scope}</span>
@@ -120,7 +123,7 @@ function UnitCard({unit}: {unit: Unit}): ReactNode {
         ))}
       </ul>
     </div>
-  );
+  )
 }
 
 export default function FlowDiagram(): ReactNode {
@@ -151,5 +154,5 @@ export default function FlowDiagram(): ReactNode {
         </div>
       </section>
     </figure>
-  );
+  )
 }

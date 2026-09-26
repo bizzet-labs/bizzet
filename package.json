@@ -2,8 +2,16 @@
   "name": "@bizzet",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "check": "biome check --write ."
+  },
   "engines": {
     "node": ">=20.0"
   },
-  "packageManager": "pnpm@10.29.3"
+  "packageManager": "pnpm@10.29.3",
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14"
+  }
 }
