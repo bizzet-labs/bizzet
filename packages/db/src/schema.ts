@@ -88,6 +88,9 @@ export const invitations = pgTable('invitations', {
   kind: invitationKind('kind').notNull().default('member'),
   // 追加用リンクの対象のメンバー。メンバーの招待では null
   memberId: text('member_id').references(() => members.id),
+  // メンバーの招待で、作るメンバーに引き継ぐ名前と役職。未入力なら null
+  name: text('name'),
+  title: text('title'),
   email: text('email').notNull(),
   groupId: text('group_id')
     .notNull()
