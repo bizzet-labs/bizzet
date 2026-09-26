@@ -17,6 +17,16 @@ export const groupKind = pgEnum('group_kind', ['headquarters', 'store'])
 // メンバーのロール。Owner と Approver は Safe のオーナーになり、Viewer は閲覧だけ
 export const memberRole = pgEnum('member_role', ['owner', 'approver', 'viewer'])
 
+// グループの受取通貨。ENS の bizzet.currency のテキストレコードに書く
+export const receivingCurrency = pgEnum('receiving_currency', ['JPYC', 'USDC'])
+
+// グループの ENS の名前の状態。failed は登録かレコードの書き込みの取引が失敗し、やり直しを待つ状態
+export const ensStatus = pgEnum('ens_status', [
+  'unregistered',
+  'registered',
+  'failed',
+])
+
 // 本部と店舗のグループ。グループごとに Safe を1つ持つ
 export const groups = pgTable(
   'groups',
@@ -33,6 +43,14 @@ export const groups = pgTable(
     safeSaltNonce: text('safe_salt_nonce'),
     // Safe をチェーンに配置した日時。配置前は null
     safeDeployedAt: timestamp('safe_deployed_at', { withTimezone: true }),
+    // ENS の名前のラベル（店舗なら shibuya.<本部の名前> の shibuya）。本部は本部の名前そのものを使うため null
+    ensLabel: text('ens_label'),
+    receivingCurrency: receivingCurrency('receiving_currency')
+      .notNull()
+      .default('JPYC'),
+    ensStatus: ensStatus('ens_status').notNull().default('unregistered'),
+    // 最後に成功した ENS の取引（登録かレコードの書き込み）のハッシュ
+    ensTxHash: text('ens_tx_hash'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -40,8 +58,24 @@ export const groups = pgTable(
   (table) => [
     // グループの名前は、大文字と小文字を区別せずに重複させない。同時に2つ作られても片方だけが通る
     uniqueIndex('groups_name_lower_idx').on(sql`lower(${table.name})`),
+    // 同じ本部の中でラベルを重複させない
+    uniqueIndex('groups_ens_label_idx').on(table.ensLabel),
   ],
 )
+
+// ENS の設定。初期セットアップのスクリプトの出力を保存する。組織に1行だけ持つ（id は 'default'）
+export const ensSettings = pgTable('ens_settings', {
+  id: text('id').primaryKey().default('default'),
+  // 本部の名前（例：bizzet.eth）
+  hqName: text('hq_name').notNull(),
+  subregistryAddress: text('subregistry_address').notNull(),
+  resolverAddress: text('resolver_address').notNull(),
+  // 本部の名前の有効期限。店舗の名前も同じ期限で登録する
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})
 
 // パスキーと、Safe のオーナーになる署名者の対応表。
 // ログイン時の WebAuthn の応答には公開鍵が含まれないため、登録時にここへ保存する

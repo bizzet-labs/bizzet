@@ -4,6 +4,16 @@ import { getAddress } from 'viem'
 import { env } from '$env/dynamic/private'
 import { m } from '$lib/paraglide/messages.js'
 import {
+  checkLabel,
+  getEnsSettings,
+  isEnsOperatorConfigured,
+  isReceivingCurrency,
+  resolveGroupEns,
+  type SyncEnsResult,
+  syncGroupEns,
+  trySyncGroupEns,
+} from '$lib/server/ens'
+import {
   type ConfigureResult,
   configureHeadquartersSafe,
   configureStoreSafe,
@@ -77,11 +87,13 @@ async function labelOwners(
 export const load: PageServerLoad = async ({ locals, params }) => {
   const { member, group } = await loadGroup(locals, params.id)
   const db = locals.db
-  const [canManage, hq, deployedAt] = await Promise.all([
+  const [canManage, hq, deployedAt, ensSettings] = await Promise.all([
     isHeadquartersMember(db, member),
     getHeadquarters(db),
     refreshDeployment(db, group),
+    getEnsSettings(db),
   ])
+  const ensView = await resolveGroupEns(group, ensSettings)
   const headquartersSafe = hq?.safeAddress ? getAddress(hq.safeAddress) : null
   const deployed = deployedAt !== null
 
@@ -128,6 +140,16 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     candidates,
     minOwners: HEADQUARTERS_MIN_OWNERS,
     headquartersThreshold: HEADQUARTERS_THRESHOLD,
+    ens: {
+      // 運用者の鍵と ENS の設定がそろって、はじめて登録とレコードの書き込みができる
+      configured: ensSettings !== null && isEnsOperatorConfigured(),
+      hqName: ensSettings?.hqName ?? null,
+      label: group.ensLabel,
+      currency: group.receivingCurrency,
+      status: group.ensStatus,
+      txUrl: group.ensTxHash ? `${EXPLORER_URL}/tx/${group.ensTxHash}` : null,
+      view: ensView,
+    },
     roles: roles && {
       ...roles,
       rolesUrl: `${EXPLORER_URL}/address/${roles.rolesAddress}`,
@@ -171,7 +193,63 @@ function proposeMessage(
   }
 }
 
+function ensMessage(reason: Extract<SyncEnsResult, { ok: false }>['reason']) {
+  switch (reason) {
+    case 'not_configured':
+      return m.groups_ens_error_not_configured()
+    case 'no_label':
+      return m.groups_ens_error_no_label()
+    case 'failed':
+      return m.groups_ens_error_failed()
+  }
+}
+
 export const actions: Actions = {
+  // ENS の名前のラベルと受取通貨を保存し、名前の登録とレコードの書き込みを行う（失敗時のやり直しも兼ねる）
+  saveEns: async ({ locals, params, request }) => {
+    const { group } = await requireManager(locals, params.id)
+    const formData = await request.formData()
+    const currency = formData.get('currency')
+    if (!isReceivingCurrency(currency)) {
+      return fail(400, {
+        action: 'saveEns',
+        message: m.common_error_invalid_input(),
+      })
+    }
+    // 本部は本部の名前そのものを使うため、ラベルは店舗だけが持つ
+    let ensLabel = group.ensLabel
+    if (group.kind === 'store') {
+      const raw = formData.get('label')
+      const checked = await checkLabel(
+        locals.db,
+        typeof raw === 'string' ? raw : '',
+        group.id,
+      )
+      if (!checked.ok) {
+        return fail(400, {
+          action: 'saveEns',
+          message:
+            checked.reason === 'label_taken'
+              ? m.groups_error_label_taken()
+              : m.groups_error_invalid_label(),
+        })
+      }
+      ensLabel = checked.label
+    }
+    await locals.db
+      .update(groups)
+      .set({ ensLabel, receivingCurrency: currency })
+      .where(eq(groups.id, group.id))
+    const result = await syncGroupEns(locals.db, group.id)
+    if (!result.ok) {
+      return fail(400, {
+        action: 'saveEns',
+        message: ensMessage(result.reason),
+      })
+    }
+    return { action: 'saveEns' }
+  },
+
   // 本部の Safe の設定を確定する。オーナーは選ばれたメンバーのパスキーの署名者
   configureHeadquarters: async ({ locals, params, request }) => {
     const { group } = await requireManager(locals, params.id)
@@ -191,6 +269,8 @@ export const actions: Actions = {
         message: configureMessage(result.reason),
       })
     }
+    // Safe のアドレスが決まったので、名前のアドレスのレコードを書く
+    await trySyncGroupEns(locals.db, group.id)
     return { action: 'configureHeadquarters' }
   },
 
@@ -210,6 +290,7 @@ export const actions: Actions = {
         message: configureMessage(result.reason),
       })
     }
+    await trySyncGroupEns(locals.db, group.id)
     return { action: 'configureStore' }
   },
 
