@@ -15,20 +15,22 @@ import {
   trySyncGroupEns,
 } from '$lib/server/ens'
 import {
+  getKeeperAddress,
+  getRolesStatus,
+  type ProposeRolesResult,
+  proposeRolesSetup,
+} from '$lib/server/group-roles'
+import {
   type ConfigureResult,
   configureHeadquartersSafe,
   configureStoreSafe,
   type DeploySafeResult,
   deployGroupSafe,
   getHeadquartersCandidates,
-  getKeeperAddress,
-  getRolesStatus,
   HEADQUARTERS_MIN_OWNERS,
   HEADQUARTERS_THRESHOLD,
-  type ProposeRolesResult,
-  proposeRolesSetup,
   refreshDeployment,
-} from '$lib/server/group-setup'
+} from '$lib/server/group-safe'
 import { requireOwner, requireVisibleGroup } from '$lib/server/guards'
 import { isOperatorConfigured } from '$lib/server/operator'
 import { getHeadquarters } from '$lib/server/safe'
