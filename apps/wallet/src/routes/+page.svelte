@@ -2,9 +2,9 @@
 import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
 import PenLineIcon from '@lucide/svelte/icons/pen-line'
 import { onMount } from 'svelte'
-import { formatUnits } from 'viem'
-import { callApi } from '@/approvals.js'
+import { callApi } from '@/api.js'
 import * as Card from '@/components/ui/card/index.js'
+import { explorerAddressUrl, formatUnitsJa, shortAddress } from '@/format.js'
 
 type Home = {
   member: { name: string | null; email: string; role: string }
@@ -35,9 +35,7 @@ onMount(async () => {
 
 function formatBalance(value: string | null | undefined, decimals: number) {
   if (value === null || value === undefined) return '—'
-  return Number(formatUnits(BigInt(value), decimals)).toLocaleString('ja-JP', {
-    maximumFractionDigits: 2,
-  })
+  return formatUnitsJa(value, decimals, 2)
 }
 </script>
 
@@ -84,12 +82,12 @@ function formatBalance(value: string | null | undefined, decimals: number) {
 							{#if group.safeAddress}
 								·
 								<a
-									href={`https://sepolia.etherscan.io/address/${group.safeAddress}`}
+									href={explorerAddressUrl(group.safeAddress)}
 									target="_blank"
 									rel="noreferrer"
 									class="font-mono text-xs underline"
 								>
-									{group.safeAddress.slice(0, 6)}…{group.safeAddress.slice(-4)}
+									{shortAddress(group.safeAddress)}
 								</a>
 							{/if}
 						</Card.Description>

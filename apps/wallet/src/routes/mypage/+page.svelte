@@ -5,9 +5,10 @@ import LogOutIcon from '@lucide/svelte/icons/log-out'
 import UserIcon from '@lucide/svelte/icons/user'
 import WalletIcon from '@lucide/svelte/icons/wallet'
 import { onMount } from 'svelte'
-import { callApi } from '@/approvals.js'
+import { callApi } from '@/api.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
+import { explorerAddressUrl } from '@/format.js'
 import { endSession, loadPasskey, type StoredPasskey } from '@/passkey.js'
 import { getSafeAddress } from '@/safe.js'
 import { goto } from '$app/navigation'
@@ -182,7 +183,7 @@ async function handleLogout() {
 						<span class="font-medium">承認の送信に使うアカウント</span>
 						{#if safeAddress}
 							<a
-								href={`https://sepolia.etherscan.io/address/${safeAddress}`}
+								href={explorerAddressUrl(safeAddress)}
 								target="_blank"
 								rel="noreferrer"
 								class="text-muted-foreground font-mono text-xs break-all hover:underline"

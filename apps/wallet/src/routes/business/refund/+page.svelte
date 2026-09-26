@@ -1,9 +1,9 @@
 <script lang="ts">
 import { onMount } from 'svelte'
-import { formatUnits } from 'viem'
-import { callApi } from '@/approvals.js'
+import { callApi } from '@/api.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
+import { formatUnitsJa, shortAddress } from '@/format.js'
 import { loadPasskey, type StoredPasskey } from '@/passkey.js'
 
 type RefundItem = {
@@ -107,15 +107,16 @@ function statusClass(status: RefundItem['status']) {
 
 function formatAmount(item: RefundItem) {
   if (!item.token || item.amount === null) return '—'
-  const value = Number(
-    formatUnits(BigInt(item.amount), item.token.decimals),
-  ).toLocaleString('ja-JP', { maximumFractionDigits: item.token.decimals })
+  const value = formatUnitsJa(
+    item.amount,
+    item.token.decimals,
+    item.token.decimals,
+  )
   return `${value} ${item.token.symbol}`
 }
 
-function shortAddress(address: string | null) {
-  if (!address) return '—'
-  return `${address.slice(0, 6)}…${address.slice(-4)}`
+function recipientLabel(address: string | null) {
+  return address ? shortAddress(address) : '—'
 }
 
 const inputClass =
@@ -225,7 +226,7 @@ const inputClass =
 							<div class="flex min-w-0 flex-1 flex-col gap-0.5">
 								<span class="font-medium tabular-nums">{formatAmount(item)}</span>
 								<span class="text-muted-foreground font-mono text-xs">
-									宛先 {shortAddress(item.recipient)}
+									宛先 {recipientLabel(item.recipient)}
 								</span>
 								<span class="text-muted-foreground text-xs">
 									{item.refund ? item.description : `出金${item.description ? `：${item.description}` : ''}`}

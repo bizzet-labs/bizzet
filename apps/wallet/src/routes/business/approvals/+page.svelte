@@ -2,10 +2,12 @@
 import FingerprintIcon from '@lucide/svelte/icons/fingerprint'
 import SendIcon from '@lucide/svelte/icons/send'
 import { onMount } from 'svelte'
-import { formatUnits, type Hex } from 'viem'
-import { callApi, executeApproval, signApproval } from '@/approvals.js'
+import type { Hex } from 'viem'
+import { callApi } from '@/api.js'
+import { executeApproval, signApproval } from '@/approvals.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
+import { explorerTxUrl, formatUnitsJa } from '@/format.js'
 import { loadPasskey, type StoredPasskey } from '@/passkey.js'
 
 type Approval = {
@@ -130,7 +132,7 @@ function handleExecute(item: Approval) {
 
 function formatAmount(item: Approval) {
   if (!item.amount || !item.token) return null
-  return `${Number(formatUnits(BigInt(item.amount), item.token.decimals)).toLocaleString('ja-JP', { maximumFractionDigits: 6 })} ${item.token.symbol}`
+  return `${formatUnitsJa(item.amount, item.token.decimals, 6)} ${item.token.symbol}`
 }
 
 function short(value: string) {
@@ -164,7 +166,7 @@ function short(value: string) {
 			<p class="text-sm">
 				実行しました：
 				<a
-					href={`https://sepolia.etherscan.io/tx/${hash}`}
+					href={explorerTxUrl(hash)}
 					target="_blank"
 					rel="noreferrer"
 					class="font-mono underline">{short(hash)}</a

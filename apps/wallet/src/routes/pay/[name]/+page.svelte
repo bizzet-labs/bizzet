@@ -28,6 +28,7 @@ import {
 import { publicClient } from '@/chain.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
+import { explorerAddressUrl, explorerTxUrl, shortAddress } from '@/format.js'
 import {
   connectInjectedWallet,
   getInjectedProvider,
@@ -38,7 +39,6 @@ import {
   DEMO_JPY_PER_USD,
   formatTokenAmount,
   parsePriceTag,
-  shortAddress,
   toTokenAmount,
 } from '@/pay.js'
 import {
@@ -412,7 +412,7 @@ function formatYen(value: number) {
 							<span class="font-mono text-xs">{name}</span>
 							{#if recipient}
 								<a
-									href={`https://sepolia.etherscan.io/address/${recipient}`}
+									href={explorerAddressUrl(recipient)}
 									target="_blank"
 									rel="noreferrer"
 									class="text-muted-foreground inline-flex items-center gap-1 font-mono text-xs hover:underline"
@@ -586,7 +586,7 @@ function formatYen(value: number) {
 
 					{#if txHash}
 						<a
-							href={`https://sepolia.etherscan.io/tx/${txHash}`}
+							href={explorerTxUrl(txHash)}
 							target="_blank"
 							rel="noreferrer"
 							class="text-primary inline-flex items-center justify-center gap-1 text-xs hover:underline"
