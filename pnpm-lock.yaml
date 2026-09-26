@@ -20,6 +20,9 @@ importers:
       '@bizzet/db':
         specifier: workspace:*
         version: link:../../packages/db
+      ox:
+        specifier: ^0.14.45
+        version: 0.14.45(typescript@6.0.3)(zod@3.25.76)
     devDependencies:
       '@internationalized/date':
         specifier: ^3.12.4
@@ -72,6 +75,9 @@ importers:
       '@bizzet/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@bizzet/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       ox:
         specifier: ^0.14.45
         version: 0.14.45(typescript@6.0.3)(zod@3.25.76)

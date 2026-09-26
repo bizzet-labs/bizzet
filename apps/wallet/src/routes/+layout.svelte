@@ -6,7 +6,9 @@ import './layout.css'
 
 let { children } = $props()
 
-const showBottomNav = $derived(page.url.pathname !== '/login')
+const showBottomNav = $derived(
+  page.url.pathname !== '/login' && !page.url.pathname.startsWith('/invite'),
+)
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
