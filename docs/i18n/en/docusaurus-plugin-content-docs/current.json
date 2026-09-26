@@ -1,0 +1,18 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.tutorialSidebar.category.Product": {
+    "message": "Product",
+    "description": "The label for category 'Product' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Wallet for Biz": {
+    "message": "Wallet for Biz",
+    "description": "The label for category 'Wallet for Biz' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Design": {
+    "message": "Design",
+    "description": "The label for category 'Design' in sidebar 'tutorialSidebar'"
+  }
+}

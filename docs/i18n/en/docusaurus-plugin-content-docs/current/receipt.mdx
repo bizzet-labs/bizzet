@@ -1,0 +1,116 @@
+---
+sidebar_position: 9
+---
+
+import ReceiptDiagram from '@site/src/components/ReceiptDiagram';
+
+# Receipt
+
+Receipt is a mechanism that keeps a record of what a customer bought with the customer, not the store. The store can only ask "does this condition hold?" and never holds the purchase history itself. This page covers what Receipt solves, how far it goes in the beta, and where it touches bizzet's payments.
+
+## What it solves
+
+Stores want to price based on purchase history, such as "give a discount only to customers who bought before." Until now this required the store to hold purchase history in a membership card or customer database, which put the burden of managing that data and the risk of a leak on the store, while customers had no choice but to accept their purchases being collected by the store. Receipt keeps the record with the customer and gives the store only the answer to whether a condition holds, so the store never has to hold purchase history.
+
+## Approach
+
+- **The customer holds the record.** At the moment of payment the record stays with the customer, and nothing is left on the store's server.
+- **The store learns only true or false.** The store asks "does this condition hold?" and never learns which payment, when, or from which address.
+- **Payment and proof are not linked.** A customer can prove from an address different from the one they paid with, so a proof cannot be traced back to a past payment.
+- **The same record cannot be used for the same reward twice.** A one-time-use mark is kept per reward, preventing double use without the store using a database.
+- **No new contracts of our own.** Set management and proof verification are left to the audited, already-deployed Semaphore v4.
+
+## Scope of the beta
+
+The beta version of Receipt is limited to the following scope.
+
+| Item | Beta decision |
+| --- | --- |
+| Store and set | One store, one set per product |
+| Reward | A one-time discount for a customer who previously bought the same product |
+| Chain | Semaphore v4 already deployed on Sepolia |
+| Client-side construction | bizzet's checkout page holds the secret and builds the identifier and proof |
+| Gas | The paying customer pays for both registration and verification (Sepolia test ETH) |
+| Registering the discount rate | bizzet's operator registers it via Checkout's admin function, together with the product and price |
+| Secret handoff | None. Switching device or browser makes prior receipts unusable |
+
+No screen is built for registering the discount rate. Since there is one store and one price tag, it is enough for the operator to register it. Checkout's admin function can only change the product, price, and discount rate; it never touches funds.
+
+## What it can do
+
+| Function | What it does | Performed by |
+| --- | --- | --- |
+| Receiving a receipt | Registering an identifier to the per-product set, at the moment of payment | Customer (checkout page) |
+| Proving a condition | Proving "this product was bought" without revealing which payment | Customer (checkout page) |
+| Judging the condition | Verifying the proof and applying the discount | Checkout contract |
+| Preventing double use | A used-record per reward | Semaphore v4 |
+
+## Boundary with bizzet
+
+### Calling the judgment
+
+When a payment comes with a proof attached, the Checkout contract passes the following three things to Semaphore v4 for verification. If verification passes, the discount is applied; if not, the payment itself fails.
+
+| What is passed | Contents |
+| --- | --- |
+| Set | The per-product set ID (which product's purchase history is being asked about) |
+| Reward scope | The unit that prevents double use. In the beta, the same as the set ID (once per product) |
+| Proof | A zero-knowledge proof, made by the customer, of membership in the set |
+
+### What bizzet does not handle
+
+How receipts are shown on screen, how the secret is placed onto the customer's wallet, and standardizing how proofs are constructed, are all out of scope for the beta. Beta bizzet only holds the secret storage and proof construction on the checkout page, and the registration and verification calls from Checkout.
+
+## Mechanism
+
+The numbers in the diagram correspond to the numbered steps below.
+
+<ReceiptDiagram />
+
+### First purchase
+
+1. When a customer opens bizzet's checkout page from a price tag's QR code or NFC tag, the checkout page builds a product-specific identifier from the secret on hand and attaches it to the payment. The customer's wallet only signs that transaction and never touches the secret
+2. The Checkout contract accepts the payment and registers the identifier to the product's set
+
+### Second purchase
+
+3. The checkout page reads the set's contents from the chain and builds, in the browser, a zero-knowledge proof of "membership in this set," attaching it to the payment. The paying address may differ from the previous one
+4. The Checkout contract passes the proof to Semaphore v4, and if it is valid, settles at the discounted amount. The used mark is recorded within the same transaction
+
+Even if a store looks at a set's contents, all it can see is a list of identifiers; it cannot tell which identifier was used in whose proof.
+
+## Identifier and proof decisions
+
+- **An identifier is built per product.** From a single underlying secret, a distinct identifier is derived per store and product through a fixed procedure. Registering the same identifier to multiple sets would let purchases be linked across products just by cross-referencing the public sets.
+- **A proof is bound to the paying address.** A proof is built to include the paying address, and Checkout only accepts a proof for a payment from that address. This prevents a third party from taking a proof that appeared on-chain and attaching it to their own payment to hijack the discount and the used-mark.
+- **No re-registration into the same set.** A payment for a product already in the set attaches only a proof, not an identifier. Registering the same identifier again would do nothing but increase gas cost.
+- **A proof must be used within one hour.** The set is updated on every payment, and a proof built from an older version of the set is only valid for one hour after that update. The checkout page builds the proof immediately before payment and rebuilds it if an hour has passed.
+- **The secret lives in the browser.** The checkout page stores the secret in the browser. Switching device or browser loses the secret, and prior receipts become unusable.
+
+## Design choices
+
+| Design choice | Chosen | Not chosen |
+| --- | --- | --- |
+| How the record is kept | Registering an identifier to a zero-knowledge set (a Semaphore v4 group) | An NFT or attestation on the customer's address (publicly reveals who bought what) |
+| Unit of proof | Membership in a per-product set | Presenting the payment transaction itself (past payments could be traced) |
+| Preventing double use | A nullifier per reward scope | Tracking used status in the store's database |
+| Where verification happens | Semaphore v4 itself, called from Checkout (same transaction as the payment) | A verification contract of bizzet's own (adds unaudited Solidity) |
+| Where the secret is stored | Browser storage on bizzet's checkout page | Inside the customer's wallet (ordinary wallets have no facility to hold a secret) |
+| Address that submits the proof | A different address from the payment is allowed | Restricted to the same address as the payment |
+
+The zero-knowledge set uses Semaphore v4. Semaphore v4 is a mechanism that can show both membership in a set and that the same scope has not been used twice, without revealing whose record it is. Anyone can create a set, only the creator can register to it, and verification records the used-mark within the contract itself. It has been audited by PSE for v4.0.0, and the public parameters used for proofs were generated in a trusted setup in July 2024 with over 400 participants. It is deployed at the same address on Ethereum, Sepolia, Polygon, Arbitrum, and others, so bizzet can use it just by calling it from Checkout (per Semaphore's official documentation and contract source, confirmed 2026-09-27).
+
+## What it does not protect
+
+- **The fact of payment.** The payment itself remains on the public chain, so anyone can see which address paid which store and when, independent of the receipt. What Receipt hides is the link between a later proof and a past payment.
+- **Anonymity when a set is small.** Since an identifier is registered in the same transaction as the payment, the link between the identifier and the paying address is public. A proof only hides "which identifier in the set" it is, so if a set has only one customer in it, it is obvious whose proof it is. In the beta, with few customers and small sets, anonymity should be treated as weak.
+
+## Out of scope for the beta
+
+| Not handled | Reason |
+| --- | --- |
+| Count-based conditions (bought 3 times) and time-based conditions (bought within 30 days) | A proof of set membership cannot express either count or time |
+| A screen for the store to register the discount rate | With one store, registration by the operator is sufficient |
+| Subsidizing gas | Sepolia test ETH is sufficient for now; production cost will be decided from beta measurements in the production design |
+| A secret that survives a device change | Would require a backup mechanism or deriving the secret from a wallet signature, beyond the minimal build |
+| Multiple stores and cross-store rewards | The beta has only one store |

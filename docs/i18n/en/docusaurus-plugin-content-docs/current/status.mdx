@@ -1,0 +1,102 @@
+---
+sidebar_position: 16
+sidebar_label: Status
+---
+
+# Implementation status
+
+## Purpose and scope of this page
+
+This page shows, for each feature ID and screen ID, what was built and what has not yet been built for the beta during ETHGlobal Tokyo 2026 (September 25-27, 2026). It covers only the implementation status of each feature and screen and how that status was verified; it does not cover the content of the features and screens or the reasoning behind their design. Status is expressed as one of three values, "Done," "Partial," or "Not implemented," and for "Partial" items, what is missing is written below the table.
+
+## Summary
+
+The dashboard's features and the on-chain building blocks underpinning the wallet (Safe, the passkey signer, the Roles v2 configuration, and ENSv2 names and records) are complete, and their behavior was verified on a Sepolia fork. Withdrawals from the headquarters and store Safes now work end to end, from the passkey signature in the wallet through to execution, and customers can resolve the recipient from the price tag's QR code via an ENS name and pay in JPYC or USDC, swapping through Uniswap v4 when the currency differs from what the recipient accepts. Receipts and the Checkout contract, however, have not yet been built. Automated tests all pass, covering vitest (11 for the dashboard, 65 for the wallet) and 23 contract fork tests, and type checking also passes.
+
+## Wallet
+
+| ID | Feature | Status | Verification method |
+| --- | --- | --- | --- |
+| W-01 | Passkey registration and login | Done | Login signature verification in vitest, and session confirmation on the development server |
+| W-02 | Balance check | Done | API confirmation with a disposable database and the development server |
+| W-03 | Transfer and refund requests | Partial | Amount, recipient, and nonce checks in vitest, and API confirmation on the development server |
+| W-04 | Signing withdrawal approvals | Done | API confirmation with a disposable database, and a fork test verifying signatures |
+| W-05 | Executing a withdrawal with two approvals | Partial | Successful execTransaction on the headquarters and store Safes in a fork test |
+| W-06 | Moving and swapping revenue from other chains | Not implemented | — |
+| W-07 | Issuing a link to add a password | Done | Link assembly in vitest, and API confirmation on the development server |
+
+For W-01, the server verifies the passkey signature over a single-use challenge against the stored public key, and issues a signed session cookie. Login with an actual passkey has not yet been tried. For W-03, a store member's refund request is made in the wallet's WS-04, and the withdrawal is created in the dashboard's DS-09; requests from actual members have not yet been tried. For W-04's store Safe proposal, the headquarters Owner and Approver sign a SafeMessage on the headquarters Safe, which is then passed to the store Safe as a contract signature from the headquarters Safe. W-05 currently runs on a provisional path that, instead of a relayer account, sends through Pimlico from the passkey account of whoever signed last; an actual send on Sepolia has not yet been tried. Group Safes are configured in the dashboard, and withdrawals are not executed for an unconfigured Safe. W-06 has not been built, since the beta has no automatic bridge.
+
+## Dashboard
+
+| ID | Feature | Status | Verification method |
+| --- | --- | --- | --- |
+| D-01 | Login with email and password | Done | End-to-end confirmation with curl, including accepting an invitation |
+| D-02 | List of group balances | Done | Confirmation with a test group holding real Sepolia addresses |
+| D-03 | Deposit history | Done | Ingestion of real Sepolia JPYC/USDC transfers, and display confirmation in the group detail view |
+| D-04 | Checking withdrawal status | Done | Confirmation across the list, detail, creation, rejection, and status-sync screens |
+| D-05 | Adding members and assigning roles | Done | Rule confirmation with a test database |
+| D-06 | Revenue awaiting bridging | Done | Confirmation of the empty-state page display |
+| D-07 | Creating a store group and configuring its Safe | Done | A Sepolia fork test of the Roles v2 configuration content, and type checking of the Safe deployment |
+| D-08 | Issuing a link to add a passkey | Done | Acceptance on the wallet side of a link issued from the account screen |
+| D-09 | Switching display language | Done | Confirmation in Japanese and English across all 11 screens |
+
+D-02 reads balances together in a single multicall and also shows the count of pending approval proposals, but revenue awaiting a bridge is intentionally not shown in the beta. D-04 can be checked and operated in the dashboard, but signing a proposal cannot be done because W-04 is not implemented. D-05 covers invitations with a name and title, editing, and deletion, as well as creating the resulting owner_change proposal. D-07 covers creating a store, configuring the headquarters and store Safes, deploying the Safe with an operator key, and creating the Roles v2 configuration proposal. Safe deployment has not yet been tried on actual Sepolia.
+
+## Price tags and payment
+
+| ID | Feature | Status | Verification method |
+| --- | --- | --- | --- |
+| P-01 | Price display in JPYC and USDC | Partial | Conversion confirmation in vitest, and display confirmation on the payment page |
+| P-02 | Accepting payment via QR or NFC | Partial | Generating a price tag QR code, and display confirmation on the payment page |
+| P-03 | Swap at payment time | Partial | A Uniswap v4 swap and direct receipt by the store in a fork test |
+| P-04 | "Processing" and "Done" display | Done | Type checking and build of the payment page |
+| P-05 | Registering products and prices | Not implemented | — |
+| P-06 | Configuring recipient and recipient currency | Done | Resolution of a store's name record via the Universal Resolver in a fork test |
+| P-07 | Registering a receipt identifier | Not implemented | — |
+| P-08 | Discounts based on purchase history | Not implemented | — |
+
+The payment page resolves the store's ENS name pointed to by the price tag's QR code via the Universal Resolver, and sends ERC-20 tokens from the customer's browser wallet to the recipient. P-01 converts the USDC price using a fixed demo rate, and P-02 supports only QR, not NFC. P-04 has not yet been tried with an actual transfer from a customer's wallet. P-06 writes to ENS from store creation and group configuration, but registering the headquarters name on actual Sepolia has not yet been done. P-03 was built so that, instead of a Checkout contract, the customer's wallet calls Uniswap v4's Universal Router directly and delivers the swapped currency to the store's Safe. Because the Sepolia JPYC/USDC pool has no liquidity, the swap option cannot be chosen on actual Sepolia until liquidity is added. P-05, P-07, and P-08 are not implemented because integration with the Checkout contract and Semaphore has not been built.
+
+## On-chain building blocks
+
+| Component | Status | Verification method |
+| --- | --- | --- |
+| Safe configuration and CREATE2 address computation | Done | Address match with a deployed Safe in a fork test |
+| Passkey signer and ERC-4337 UserOperation | Done | End-to-end `handleOps` execution in a fork test, and an actual send on Sepolia |
+| SafeTx hash computation | Done | Match with the Safe's `getTransactionHash` on a fork |
+| Roles v2 configuration | Done | Fork test confirming that a keeper can only send to the headquarters Safe |
+| ENSv2 integration (headquarters name, store subnames, recipient records) | Done | Fork test confirmation of registration, record writing, and resolution |
+| Nested approval for store Safes (contract signature from the headquarters Safe) | Done | Fork test confirming a successful store execTransaction with two headquarters owner signatures, and failure with one signature |
+| Submitting a transaction once signatures are complete | Partial | Signer deployment and execTransaction within a single UserOperation in a fork test |
+| Uniswap v4 swap (quoting, Permit2, Universal Router, full-range liquidity addition) | Done | Fork test confirming matching quotes for JPYC/USDC swaps in both directions |
+| Checkout contract | Not implemented | — |
+| Semaphore v4 integration | Not implemented | — |
+
+For the passkey signer and ERC-4337, we confirmed that a Safe and its signer could be deployed via an actual UserOperation on Sepolia through Pimlico, with gas sponsored on our behalf. That transaction's hash is 0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4, and it can be verified on Sepolia Etherscan (https://sepolia.etherscan.io/tx/0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4).
+
+## Screens
+
+| Screen ID | Screen | Status |
+| --- | --- | --- |
+| WS-01 | Login | Done |
+| WS-02 | Home | Done |
+| WS-03 | Tasks | Done |
+| WS-04 | Refund | Done |
+| WS-05 | My page | Done |
+| WS-06 | Approval | Done |
+| DS-01 | Login | Done |
+| DS-02 | Home | Done |
+| DS-03 | Group detail | Done |
+| DS-04 | Withdrawal list | Done |
+| DS-05 | Withdrawal detail | Done |
+| DS-06 | Member list | Done |
+| DS-07 | Add member | Done |
+| DS-08 | Bridge status | Done |
+| DS-09 | Create withdrawal | Done |
+| DS-10 | Account | Done |
+| DS-11 | Group list | Done |
+| DS-12 | Add store | Done |
+| DS-13 | Group settings | Done |
+
+DS-08 is built as a screen showing an empty state, since the beta has no bridge.

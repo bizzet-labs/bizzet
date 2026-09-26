@@ -1,0 +1,118 @@
+---
+sidebar_position: 16
+sidebar_label: ENS
+---
+
+# ENS design
+
+This document lays out the design for integrating ENSv2 into bizzet at a level of detail an implementer can act on. It covers registering the headquarters name, registering store subnames, writing recipient records, and resolving names on screen. Resolution from price tags or the Checkout contract, and member subnames, are out of scope, since they will not be built in the beta.
+
+## Overall structure
+
+The headquarters name (e.g. `bizzet.eth`) is registered with ENSv2's ETHRegistrar, and a single headquarters-owned subname registry is placed under it, in which store names (e.g. `shibuya.bizzet.eth`) are registered. Headquarters and store names share the same one resolver, and each name has the group's Safe address and settlement currency written to it. Name registration and record writing are performed by bizzet's operator key, and in the dashboard only the headquarters Owner can issue that instruction. The dashboard and wallet resolve names through the Universal Resolver and display the values written to ENS on screen.
+
+## Contracts used
+
+All of these are contracts ENS has deployed on Sepolia; bizzet writes no Solidity of its own. The addresses come from ENS's official documentation's deployment list, and each has been confirmed to have code on Sepolia (confirmed 2026-09-27).
+
+| Contract | Address | Usage |
+| --- | --- | --- |
+| ETHRegistrar | `0xabe76f6c8dfced81aa5a2bb8034202a7136b94ca` | Registering the headquarters name (commit and register) |
+| ETHRegistry | `0x657ea849311d3d5823348dded7c2aaafb3ede09e` | Records `.eth` names (written automatically on registration) |
+| VerifiableFactory | `0x9e726eb570beb6bceb495ab8cda7df517d4e841c` | Deploying the subname registry and resolver proxies |
+| UserRegistryImpl | `0xa80338aaa8d23831cea25e858d1774534abb0263` | The subname registry implementation |
+| PermissionedResolverImpl | `0x14f09fd05d4585759e54844dc9b00147131cf243` | The resolver implementation |
+| UniversalResolverV2 | `0x5d25c1d6acbb71b7a28aa7899618a3412a8303e3` | Name resolution |
+| StandardRentPriceOracle | `0x9b0b9c65bdaf9794ff7697e4dcfb1f50581072bb` | Computing registration fees |
+| MockUSDC | `0x16f95d91dba7da3aca778ec053df0ff6c6a8aa8e` | Paying registration fees (6 decimals) |
+
+## Name structure
+
+| Name | Example | Where it lives | Owner |
+| --- | --- | --- | --- |
+| Headquarters | `bizzet.eth` | ETHRegistry | Operator key |
+| Store | `shibuya.bizzet.eth` | Headquarters' subname registry | Operator key |
+
+No separate registry is placed per store; all store names are registered directly under the headquarters' subname registry. A store name's expiry matches the headquarters name's expiry.
+
+### Label decisions
+
+- The headquarters label is decided once during initial setup; store labels are entered by the headquarters Owner when a store is created
+- Labels are 3-32 characters of lowercase letters, digits, and hyphens, normalized per ENSIP-15 (viem's `normalize`)
+- Labels must not be duplicated within the same headquarters
+
+## Records
+
+The following records are written for both headquarters and store names.
+
+| Record | Key | Value |
+| --- | --- | --- |
+| Address | `addr` (coin type 60) | The group's Safe address |
+| Settlement currency | text `bizzet.currency` | `JPYC` or `USDC` |
+| Display name | text `description` | The group's name |
+
+While a group's Safe is not yet configured, the address record is not written; it is written once the Safe's configuration is finalized. The default settlement currency is `JPYC`, and when the headquarters Owner changes it on the group's settings screen, the text record is rewritten. Record writes bundle the resolver's `setAddress` and `setText` into a single transaction via `multicall`. Because ENSv2's resolver addresses records by DNS-encoded name rather than node hash, both functions are passed the encoded name.
+
+## Permissions
+
+| Target | Roles granted | Grantee |
+| --- | --- | --- |
+| Subname registry | Register, set resolver, update, and each of their admin roles | Operator key |
+| Resolver | Write address and write text, and each of their admin roles | Operator key |
+
+Role values follow ENSv2's contract definitions. In the subname registry, register is `1 << 0`, update is `1 << 16`, and set-resolver is `1 << 24`. In the resolver, writing an address is `1 << 0` and writing text is `1 << 4`. Each admin role is that value shifted left by 128 bits. Since every role is granted per resource, a key without the role cannot rewrite records.
+
+## Flow
+
+### Initial setup (one time only)
+
+Initial setup is performed once by the operator, running the scripts in `packages/contracts`.
+
+1. Deploy a proxy for the subname registry (UserRegistryImpl) via VerifiableFactory's `deployProxy`, granting the operator key the registry role through the `initialize` call passed in `deployProxy`'s `data`
+2. Likewise, deploy a proxy for the resolver (PermissionedResolverImpl), granting the operator key the resolver role via `initialize`. Since a proxy's deployment address is determined only by the caller and the salt, use a different salt from step 1, and read the deployed address from the `ProxyDeployed` event
+3. Mint MockUSDC via `mint` and `approve` the registration fee amount to ETHRegistrar
+4. Reserve the registration with ETHRegistrar's `makeCommitment` and `commit`, then wait at least 60 seconds. The reservation expires after one day
+5. Register with ETHRegistrar's `register`, setting the owner to the operator key, the subname registry to step 1's proxy, the resolver to step 2's proxy, the term to one year, and the payment token to MockUSDC
+6. Write the headquarters name's records, and save step 1 and 2's addresses and the headquarters name to the database
+
+The registration fee is read from ETHRegistrar's `getRegisterPrice` immediately before registering. Registering a 6-character label for one year cost 8.000021 MockUSDC (confirmed 2026-09-27).
+
+### Adding a store
+
+1. The headquarters Owner enters the store's name and label in the dashboard's add-store flow
+2. After the dashboard's server saves the group and its Safe configuration, it registers the store name via the subname registry's `register`
+3. It then writes the store name's records via the resolver's `multicall`
+4. If either transaction fails, the group's creation is not rolled back. The name's state is left as "failed," so it can be retried from the group's settings screen
+
+### Name resolution and display
+
+- The group's name is shown in the dashboard's group list, group detail, and the wallet's home screen
+- The address and settlement currency shown come from resolving via the Universal Resolver, not from the database's values
+- If the resolved address differs from the Safe address in the database, a warning is shown
+
+## Data storage
+
+| Table | Contents |
+| --- | --- |
+| ENS settings | Headquarters name, subname registry and resolver addresses, expiry (one row per organization) |
+| Group | Name label, settlement currency, name state (unregistered/registered/failed), registration transaction hash |
+
+## Where keys and settings live
+
+| Setting | Location | Purpose |
+| --- | --- | --- |
+| `ENS_OPERATOR_PRIVATE_KEY` | The dashboard server's environment variables, and the initial setup script's environment variables | Name registration and record writing |
+| `SEPOLIA_RPC_URL` | Same as above | Sending transactions and resolving names |
+
+The operator key is separate from the group Safes that hold funds, and holds only Sepolia ETH for gas. If it leaks, only ENS records can be rewritten; group funds are not exposed. However, since the recipient address can be rewritten, if it leaks the key is rotated and the resolver role is transferred, and the on-screen warning (a mismatch between the resolved address and the Safe) makes it possible to notice the rewrite.
+
+## Design choices
+
+| Design choice | Chosen | Not chosen |
+| --- | --- | --- |
+| Name owner | Operator key | Headquarters Safe (would require two-person approval and a deployed Safe for every rewrite) |
+| Where store names live | Headquarters' subname registry | A separate registry per store (deployment overhead grows with the number of stores) |
+| Resolver | A PermissionedResolver shared by headquarters and stores | A resolver per name (role grants would have to be repeated per name) |
+| How the recipient is expressed | The `addr` record | A custom text record (unreadable by ordinary wallets) |
+| On-screen value | The value resolved via Universal Resolver | The database's value (cannot confirm it was actually written to ENS) |
+| Payment method | Ordinary transactions from the operator key | A relay account and Paymaster (writing to ENS is not a funds operation and does not need two-person approval) |
