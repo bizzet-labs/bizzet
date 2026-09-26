@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/field/index.js'
 import * as Select from '@/components/ui/select/index.js'
 import { m } from '$lib/paraglide/messages.js'
-import type { GroupKind, Role } from './columns.js'
+import type { GroupKind, Role } from '$lib/roles'
 
 // 招待とメンバーの編集で共通の、グループとロールの選択。
 // 店舗のグループには Viewer しか割り当てられないため、店舗を選んだら Viewer に固定する

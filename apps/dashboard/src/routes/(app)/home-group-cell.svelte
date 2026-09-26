@@ -1,12 +1,9 @@
 <script lang="ts">
 import { Badge } from '@/components/ui/badge/index.js'
 import { m } from '$lib/paraglide/messages.js'
+import type { GroupKind } from '$lib/roles'
 
-let {
-  id,
-  name,
-  kind,
-}: { id: string; name: string; kind: 'headquarters' | 'store' } = $props()
+let { id, name, kind }: { id: string; name: string; kind: GroupKind } = $props()
 
 const kindLabel = $derived(
   kind === 'headquarters'

@@ -1,6 +1,7 @@
 import { createColumnHelper, renderComponent } from '@tanstack/svelte-table'
 import type { DataTableFeatures } from '@/components/data-table/data-table-features.js'
 import { m } from '$lib/paraglide/messages.js'
+import type { Role } from '$lib/roles'
 import CandidateSelectCell from './candidate-select-cell.svelte'
 import MemberCell from './member-cell.svelte'
 import PasskeyBadge from './passkey-badge.svelte'
@@ -9,7 +10,7 @@ export type CandidateRow = {
   id: string
   label: string
   email: string
-  role: 'owner' | 'approver' | 'viewer'
+  role: Role
   hasPasskey: boolean
 }
 

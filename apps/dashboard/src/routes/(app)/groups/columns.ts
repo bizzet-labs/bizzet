@@ -1,6 +1,7 @@
 import { createColumnHelper, renderComponent } from '@tanstack/svelte-table'
 import type { DataTableFeatures } from '@/components/data-table/data-table-features.js'
 import { m } from '$lib/paraglide/messages.js'
+import type { GroupKind } from '$lib/roles'
 import GroupKindBadge from './group-kind-badge.svelte'
 import GroupNameCell from './group-name-cell.svelte'
 import SafeStatusBadge from './safe-status-badge.svelte'
@@ -9,7 +10,7 @@ import SettingsLinkCell from './settings-link-cell.svelte'
 export type GroupRow = {
   id: string
   name: string
-  kind: 'headquarters' | 'store'
+  kind: GroupKind
   safeStatus: 'unconfigured' | 'undeployed' | 'deployed'
   memberCount: number
 }

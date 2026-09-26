@@ -2,13 +2,14 @@ import { createColumnHelper, renderComponent } from '@tanstack/svelte-table'
 import type { DataTableFeatures } from '@/components/data-table/data-table-features.js'
 import { formatTokenAmount } from '$lib/format'
 import { m } from '$lib/paraglide/messages.js'
+import type { GroupKind } from '$lib/roles'
 import HomeGroupCell from './home-group-cell.svelte'
 import HomeSafeCell from './home-safe-cell.svelte'
 
 export type HomeGroupRow = {
   id: string
   name: string
-  kind: 'headquarters' | 'store'
+  kind: GroupKind
   safeAddress: string | null
   balances: Record<string, string | null>
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 import { Badge } from '@/components/ui/badge/index.js'
 import { m } from '$lib/paraglide/messages.js'
-import type { Role } from './columns.js'
+import type { Role } from '$lib/roles'
 
 let { role }: { role: Role } = $props()
 
