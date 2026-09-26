@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto'
 import { and, eq, groups, gt, invitations, isNull } from '@bizzet/db'
-import { error, fail } from '@sveltejs/kit'
+import { fail } from '@sveltejs/kit'
 import { m } from '$lib/paraglide/messages.js'
+import { requireMember } from '$lib/server/guards'
 import { walletInviteUrl } from '$lib/server/member-changes'
 import type { Actions, PageServerLoad } from './$types'
 
@@ -9,8 +10,7 @@ import type { Actions, PageServerLoad } from './$types'
 const ADD_PASSKEY_TTL_MS = 60 * 60 * 1000
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const member = locals.member
-  if (!member) error(401)
+  const member = requireMember(locals.member)
   const db = locals.db
   const [group, openLink] = await Promise.all([
     db.query.groups.findFirst({ where: eq(groups.id, member.groupId) }),
@@ -49,8 +49,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
   // ウォレットでパスキーを登録するための追加用リンクを発行する。前に発行した未使用のリンクは無効にする
   issuePasskeyLink: async ({ locals }) => {
-    const member = locals.member
-    if (!member) error(401)
+    const member = requireMember(locals.member)
     if (member.passkeyId) {
       return fail(409, { message: m.members_account_passkey_exists() })
     }

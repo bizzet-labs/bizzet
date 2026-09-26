@@ -2,6 +2,7 @@ import { eq, groups, members, passkeys } from '@bizzet/db'
 import { error, fail } from '@sveltejs/kit'
 import { getAddress } from 'viem'
 import { env } from '$env/dynamic/private'
+import { explorerAddressUrl, explorerTxUrl } from '$lib/explorer'
 import { m } from '$lib/paraglide/messages.js'
 import {
   checkLabel,
@@ -28,25 +29,16 @@ import {
   proposeRolesSetup,
   refreshDeployment,
 } from '$lib/server/group-setup'
-import { requireOwner } from '$lib/server/guards'
+import { requireOwner, requireVisibleGroup } from '$lib/server/guards'
 import { isOperatorConfigured } from '$lib/server/operator'
 import { getHeadquarters } from '$lib/server/safe'
-import { canSeeGroup, isHeadquartersMember } from '$lib/server/visibility'
+import { isHeadquartersMember } from '$lib/server/visibility'
 import type { Actions, PageServerLoad } from './$types'
-
-// ベータ版は Sepolia だけのため、エクスプローラーはこの1つに決め打ちする
-const EXPLORER_URL = 'https://sepolia.etherscan.io'
 
 // 設定画面は Owner だけが開ける。見られないグループは存在も分からないよう 404 にする
 async function loadGroup(locals: App.Locals, id: string) {
   const member = requireOwner(locals.member)
-  if (!(await canSeeGroup(locals.db, member, id))) {
-    error(404, m.common_error_not_found())
-  }
-  const group = await locals.db.query.groups.findFirst({
-    where: eq(groups.id, id),
-  })
-  if (!group) error(404, m.common_error_not_found())
+  const group = await requireVisibleGroup(locals.db, member, id)
   return { member, group }
 }
 
@@ -103,7 +95,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const safe = group.safeAddress
     ? {
         address: getAddress(group.safeAddress),
-        url: `${EXPLORER_URL}/address/${getAddress(group.safeAddress)}`,
+        url: explorerAddressUrl(getAddress(group.safeAddress)),
         owners: await labelOwners(
           locals,
           group.safeOwners ?? [],
@@ -152,12 +144,12 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       label: group.ensLabel,
       currency: group.receivingCurrency,
       status: group.ensStatus,
-      txUrl: group.ensTxHash ? `${EXPLORER_URL}/tx/${group.ensTxHash}` : null,
+      txUrl: group.ensTxHash ? explorerTxUrl(group.ensTxHash) : null,
       view: ensView,
     },
     roles: roles && {
       ...roles,
-      rolesUrl: `${EXPLORER_URL}/address/${roles.rolesAddress}`,
+      rolesUrl: explorerAddressUrl(roles.rolesAddress),
       proposal: roles.proposal && {
         ...roles.proposal,
         createdAt: roles.proposal.createdAt.toISOString(),

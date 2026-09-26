@@ -1,14 +1,13 @@
 import { and, count, eq, inArray, safeTransactions } from '@bizzet/db'
-import { error } from '@sveltejs/kit'
 import { m } from '$lib/paraglide/messages.js'
 import { balanceTokens, getBalances } from '$lib/server/balances'
 import { syncDeposits } from '$lib/server/deposits'
+import { requireMember } from '$lib/server/guards'
 import { getVisibleGroups } from '$lib/server/visibility'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const member = locals.member
-  if (!member) error(401)
+  const member = requireMember(locals.member)
   const db = locals.db
 
   // 入金の取り込みを時間の上限つきで進める。失敗してもホームの表示は止めない
