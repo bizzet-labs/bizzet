@@ -32,6 +32,10 @@ export type SafeSetup = {
   threshold: bigint
   // Safe の作成と同時に作る、パスキーの署名者。オーナーに含めた署名者のうち、まだ配置していないものを渡す
   passkeys?: readonly PasskeyPublicKey[]
+  // safe4337：中継用アカウント。Safe4337Module を有効にし、fallback handler にも置く。
+  // group：グループの Safe。モジュールを入れず、fallback handler に CompatibilityFallbackHandler を置く
+  //（本部の Safe が店舗の Safe の取引に ERC-1271 で署名するため）
+  kind?: 'safe4337' | 'group'
 }
 
 // MultiSend に渡す1件の呼び出し。operation は 0 が call、1 が delegatecall
@@ -96,7 +100,24 @@ export function encodeSafeInitializer({
   owners,
   threshold,
   passkeys = [],
+  kind = 'safe4337',
 }: SafeSetup) {
+  if (kind === 'group') {
+    return encodeFunctionData({
+      abi: safeAbi,
+      functionName: 'setup',
+      args: [
+        owners,
+        threshold,
+        zeroAddress,
+        '0x',
+        sepolia.safe.fallbackHandler,
+        zeroAddress,
+        0n,
+        zeroAddress,
+      ],
+    })
+  }
   const { to, data } = encodeSetupCall(passkeys)
   return encodeFunctionData({
     abi: safeAbi,
