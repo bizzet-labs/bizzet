@@ -111,5 +111,16 @@
   "groups_ens_not_configured_description": "Run the setup script and set the operator key on the server to register names",
   "groups_ens_error_not_configured": "The ENS settings or the operator key are missing",
   "groups_ens_error_no_label": "Enter a label",
-  "groups_ens_error_failed": "Writing to ENS failed. Try again later"
+  "groups_ens_error_failed": "Writing to ENS failed. Try again later",
+  "groups_safe_deploy": "Deploy Safe",
+  "groups_safe_deploying": "Deploying…",
+  "groups_safe_deploy_note": "Payouts can be executed from the wallet once the Safe is deployed. The operator key pays the gas",
+  "groups_safe_deploy_operator_unset": "Set the operator key (ENS_OPERATOR_PRIVATE_KEY) on the server to deploy the Safe",
+  "groups_safe_deployed_done": "The Safe was deployed",
+  "groups_safe_deploy_tx": "View the deployment transaction",
+  "groups_safe_deploy_error_unconfigured": "The Safe settings are not confirmed yet",
+  "groups_safe_deploy_error_already": "This Safe is already deployed",
+  "groups_safe_deploy_error_operator": "The operator key is not set, so the Safe cannot be deployed",
+  "groups_safe_deploy_error_mismatch": "The Safe address cannot be reproduced from the saved settings, so deployment was stopped",
+  "groups_safe_deploy_error_failed": "The Safe could not be deployed. Check that the operator key holds Sepolia ETH"
 }

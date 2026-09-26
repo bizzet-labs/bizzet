@@ -111,5 +111,16 @@
   "groups_ens_not_configured_description": "初期セットアップのスクリプトを実行し、運用者の鍵をサーバーに設定すると名前を登録できます",
   "groups_ens_error_not_configured": "ENS の設定か運用者の鍵がありません",
   "groups_ens_error_no_label": "ラベルを入力してください",
-  "groups_ens_error_failed": "ENS への書き込みに失敗しました。時間をおいてやり直してください"
+  "groups_ens_error_failed": "ENS への書き込みに失敗しました。時間をおいてやり直してください",
+  "groups_safe_deploy": "Safe を配置",
+  "groups_safe_deploying": "配置中…",
+  "groups_safe_deploy_note": "ウォレットでの出金の実行は、Safe を配置してから行えます。ガス代は運用者の鍵が払います",
+  "groups_safe_deploy_operator_unset": "Safe を配置するには、サーバーに運用者の鍵（ENS_OPERATOR_PRIVATE_KEY）を設定してください",
+  "groups_safe_deployed_done": "Safe を配置しました",
+  "groups_safe_deploy_tx": "配置の取引を見る",
+  "groups_safe_deploy_error_unconfigured": "Safe の設定がまだ確定していません",
+  "groups_safe_deploy_error_already": "この Safe はすでに配置されています",
+  "groups_safe_deploy_error_operator": "運用者の鍵が設定されていないため配置できません",
+  "groups_safe_deploy_error_mismatch": "保存した設定から Safe のアドレスを再現できないため、配置を止めました",
+  "groups_safe_deploy_error_failed": "Safe を配置できませんでした。運用者の鍵に Sepolia ETH があるか確かめてください"
 }

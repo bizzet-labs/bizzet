@@ -17,6 +17,8 @@ import {
   type ConfigureResult,
   configureHeadquartersSafe,
   configureStoreSafe,
+  type DeploySafeResult,
+  deployGroupSafe,
   getHeadquartersCandidates,
   getKeeperAddress,
   getRolesStatus,
@@ -27,6 +29,7 @@ import {
   refreshDeployment,
 } from '$lib/server/group-setup'
 import { requireOwner } from '$lib/server/guards'
+import { isOperatorConfigured } from '$lib/server/operator'
 import { getHeadquarters } from '$lib/server/safe'
 import { canSeeGroup, isHeadquartersMember } from '$lib/server/visibility'
 import type { Actions, PageServerLoad } from './$types'
@@ -108,6 +111,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         ),
         threshold: group.safeThreshold ?? 0,
         deployed,
+        // 運用者の鍵があれば、未配置の Safe をこの画面から配置できる
+        canDeploy: !deployed && isOperatorConfigured(),
         // 配置日時は、画面で初めて配置を確認した時点のもの
         deployedAt: deployedAt?.toISOString() ?? null,
       }
@@ -190,6 +195,23 @@ function proposeMessage(
       return m.groups_error_keeper_unset()
     case 'already_proposed':
       return m.groups_error_roles_proposed()
+  }
+}
+
+function deployMessage(
+  reason: Extract<DeploySafeResult, { ok: false }>['reason'],
+) {
+  switch (reason) {
+    case 'unconfigured':
+      return m.groups_safe_deploy_error_unconfigured()
+    case 'already_deployed':
+      return m.groups_safe_deploy_error_already()
+    case 'operator_unset':
+      return m.groups_safe_deploy_error_operator()
+    case 'address_mismatch':
+      return m.groups_safe_deploy_error_mismatch()
+    case 'failed':
+      return m.groups_safe_deploy_error_failed()
   }
 }
 
@@ -292,6 +314,19 @@ export const actions: Actions = {
     }
     await trySyncGroupEns(locals.db, group.id)
     return { action: 'configureStore' }
+  },
+
+  // 確定した設定のまま、グループの Safe をチェーンに配置する。グループの Safe はここでだけ作る
+  deploySafe: async ({ locals, params }) => {
+    const { group } = await requireManager(locals, params.id)
+    const result = await deployGroupSafe(locals.db, group)
+    if (!result.ok) {
+      return fail(400, {
+        action: 'deploySafe',
+        message: deployMessage(result.reason),
+      })
+    }
+    return { action: 'deploySafe', txHash: result.txHash }
   },
 
   // 店舗の Safe の Roles v2 の設定を、店舗の Safe の取引として提案する

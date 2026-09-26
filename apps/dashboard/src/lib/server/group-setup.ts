@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import {
   sepolia as addresses,
+  encodeCreateSafe,
   encodeRolesSetup,
   predictRolesAddress,
   safeModuleAbi,
@@ -24,6 +25,7 @@ import { type Address, getAddress, isAddress } from 'viem'
 import type { Member } from './auth'
 import { publicClient } from './chain'
 import { checkLabel, getEnsSettings, resolveGroupEns } from './ens'
+import { operatorWallet } from './operator'
 import {
   computeGroupSafeAddress,
   createSafeTransaction,
@@ -67,6 +69,69 @@ export async function refreshDeployment(
     .set({ safeDeployedAt: deployedAt })
     .where(and(eq(groups.id, group.id), isNull(groups.safeDeployedAt)))
   return deployedAt
+}
+
+export type DeploySafeResult =
+  | { ok: true; txHash: string }
+  | {
+      ok: false
+      reason:
+        | 'unconfigured'
+        | 'already_deployed'
+        | 'operator_unset'
+        | 'address_mismatch'
+        | 'failed'
+    }
+
+// グループの Safe を、保存した設定のまま配置する。グループの Safe はここでだけ作り、ウォレットは未配置の Safe の出金を実行しない。
+// 配置先のアドレスは設定と saltNonce だけで決まり、送る鍵によらないため、運用者の鍵がガス代を払って送る
+export async function deployGroupSafe(
+  db: Db,
+  group: Group,
+): Promise<DeploySafeResult> {
+  if (
+    !group.safeAddress ||
+    !group.safeOwners ||
+    !group.safeThreshold ||
+    !group.safeSaltNonce
+  ) {
+    return { ok: false, reason: 'unconfigured' }
+  }
+  const safe = getAddress(group.safeAddress)
+  if (await isDeployed(safe)) {
+    await refreshDeployment(db, group)
+    return { ok: false, reason: 'already_deployed' }
+  }
+  const wallet = operatorWallet()
+  if (!wallet) return { ok: false, reason: 'operator_unset' }
+  const owners = group.safeOwners.map((o) => getAddress(o))
+  const threshold = BigInt(group.safeThreshold)
+  const saltNonce = BigInt(group.safeSaltNonce)
+  // 設定から再現したアドレスが保存したアドレスと食い違うなら、別の Safe を作らないよう止める
+  const predicted = await computeGroupSafeAddress(owners, threshold, saltNonce)
+  if (getAddress(predicted) !== safe) {
+    return { ok: false, reason: 'address_mismatch' }
+  }
+  try {
+    const txHash = await wallet.sendTransaction({
+      to: addresses.safe.proxyFactory,
+      data: encodeCreateSafe({ owners, threshold, kind: 'group' }, saltNonce),
+    })
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    })
+    if (receipt.status !== 'success' || !(await isDeployed(safe))) {
+      return { ok: false, reason: 'failed' }
+    }
+    await db
+      .update(groups)
+      .set({ safeDeployedAt: new Date() })
+      .where(and(eq(groups.id, group.id), isNull(groups.safeDeployedAt)))
+    return { ok: true, txHash }
+  } catch (e) {
+    console.error('Safe の配置に失敗しました', e)
+    return { ok: false, reason: 'failed' }
+  }
 }
 
 function safeStatus(group: Group, deployed: boolean): SafeStatus {

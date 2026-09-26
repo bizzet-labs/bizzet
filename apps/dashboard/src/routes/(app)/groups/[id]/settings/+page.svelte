@@ -19,6 +19,9 @@ import EnsCard from './ens-card.svelte'
 
 let { data, form } = $props()
 
+// 配置は取引の完了まで待つため、送信中はボタンを止める
+let deploying = $state(false)
+
 const HQ_FORM_ID = 'configure-headquarters'
 const STORE_FORM_ID = 'configure-store'
 
@@ -58,6 +61,21 @@ function proposalStatusLabel(status: string, signatureCount: number) {
 		<Alert.Root variant="destructive">
 			<CircleAlertIcon />
 			<Alert.Title>{form.message}</Alert.Title>
+		</Alert.Root>
+	{:else if form?.action === 'deploySafe' && form.txHash}
+		<Alert.Root>
+			<CircleCheckIcon />
+			<Alert.Title>{m.groups_safe_deployed_done()}</Alert.Title>
+			<Alert.Description>
+				<a
+					href="https://sepolia.etherscan.io/tx/{form.txHash}"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="underline underline-offset-4"
+				>
+					{m.groups_safe_deploy_tx()}
+				</a>
+			</Alert.Description>
 		</Alert.Root>
 	{:else if form?.action === 'proposeRoles' && form.proposalId}
 		<Alert.Root>
@@ -122,6 +140,31 @@ function proposalStatusLabel(status: string, signatureCount: number) {
 						{/if}
 					</dd>
 				</dl>
+				{#if data.canManage && !data.safe.deployed}
+					<div class="mt-4 flex flex-col gap-2 border-t pt-4">
+						{#if data.safe.canDeploy}
+							<p class="text-muted-foreground text-sm">{m.groups_safe_deploy_note()}</p>
+							<form
+								method="POST"
+								action="?/deploySafe"
+								class="flex justify-end"
+								use:enhance={() => {
+									deploying = true
+									return async ({ update }) => {
+										await update()
+										deploying = false
+									}
+								}}
+							>
+								<Button type="submit" disabled={deploying}>
+									{deploying ? m.groups_safe_deploying() : m.groups_safe_deploy()}
+								</Button>
+							</form>
+						{:else}
+							<p class="text-muted-foreground text-sm">{m.groups_safe_deploy_operator_unset()}</p>
+						{/if}
+					</div>
+				{/if}
 			</Card.Content>
 		</Card.Root>
 	{:else if data.group.kind === 'headquarters'}

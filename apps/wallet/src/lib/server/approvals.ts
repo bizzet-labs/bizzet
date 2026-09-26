@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto'
 import {
   sepolia as addresses,
   EIP1271_MAGIC_VALUE,
-  encodeCreateSafe,
   encodeCreateSigner,
   encodeExecTransaction,
   encodeNestedSafeSignature,
@@ -12,8 +11,6 @@ import {
   hashNestedSafeTransaction,
   hashSafeTransaction,
   type PasskeySignature,
-  predictSafeAddress,
-  proxyFactoryAbi,
   type SafeTransactionData,
   safeExecutionEventsAbi,
   safeOwnerAbi,
@@ -342,39 +339,13 @@ async function hasCode(address: Address) {
 
 export type ExecutionCall = { to: Address; data: Hex }
 
-// グループの Safe が未配置なら、保存した作成時の設定から配置する呼び出しを返す。
-// 設定から再現したアドレスが保存したアドレスと食い違うなら、別の Safe を作らないよう止める
-async function deploySafeCall(
-  group: Group,
-  label: string,
-): Promise<ExecutionCall | null> {
-  const safe = getAddress(group.safeAddress as string)
-  if (await hasCode(safe)) return null
-  if (!group.safeOwners || !group.safeSaltNonce || !group.safeThreshold) {
-    error(409, `${label}の Safe の作成時の設定がありません`)
-  }
-  const setup = {
-    owners: group.safeOwners.map((o) => getAddress(o)),
-    threshold: BigInt(group.safeThreshold),
-    kind: 'group' as const,
-  }
-  const saltNonce = BigInt(group.safeSaltNonce)
-  const proxyCreationCode = await publicClient.readContract({
-    address: addresses.safe.proxyFactory,
-    abi: proxyFactoryAbi,
-    functionName: 'proxyCreationCode',
-  })
-  if (
-    !isAddressEqual(
-      predictSafeAddress(setup, saltNonce, proxyCreationCode),
-      safe,
+// グループの Safe は、ダッシュボードの「Safe を配置」でだけ作る。未配置なら実行を止める
+async function requireDeployed(group: Group, label: string) {
+  if (!(await hasCode(getAddress(group.safeAddress as string)))) {
+    error(
+      409,
+      `${label}の Safe がまだ配置されていません。ダッシュボードで配置してください`,
     )
-  ) {
-    error(409, `${label}の Safe の設定からアドレスを再現できません`)
-  }
-  return {
-    to: addresses.safe.proxyFactory,
-    data: encodeCreateSafe(setup, saltNonce),
   }
 }
 
@@ -392,9 +363,9 @@ async function assertNextNonce(safe: Address, nonce: bigint) {
   }
 }
 
-// 署名のそろった提案を実行する呼び出しの並び。Safe と署名者が未配置なら、同じ取引の中で先に配置する。
+// 署名のそろった提案を実行する呼び出しの並び。グループの Safe は配置済みであることを求め、署名者が未配置なら同じ取引の中で先に配置する。
 // 店舗の Safe の提案は、本部のオーナーの署名の並びを本部の Safe のコントラクト署名に包んで店舗の Safe に渡す。
-// このとき本部の Safe も配置済みである必要があり、未配置なら同じ取引の中で先に配置する。
+// 本部の Safe のコントラクト署名を検証するため、本部の Safe も配置済みである必要がある。
 // 仮置き：中継用アカウントを作るまでは、この並びを最後に署名したメンバーのパスキーの ERC-4337 アカウントから送る
 export async function buildExecution(
   db: Db,
@@ -429,12 +400,8 @@ export async function buildExecution(
 
   await assertNextNonce(safe, data.nonce)
   const calls: ExecutionCall[] = []
-  const deployHq = await deploySafeCall(hq, '本部')
-  if (deployHq) calls.push(deployHq)
-  if (store) {
-    const deployStore = await deploySafeCall(store, '店舗')
-    if (deployStore) calls.push(deployStore)
-  }
+  await requireDeployed(hq, '本部')
+  if (store) await requireDeployed(store, '店舗')
   for (const r of usable) {
     if (!(await hasCode(getAddress(r.signer)))) {
       calls.push({
@@ -512,6 +479,7 @@ export async function confirmExecution(
   })
   if (!group) return
   const update: Partial<Group> = {}
+  // 配置はダッシュボードで記録するが、記録の前に実行されたときのために埋めておく
   if (!group.safeDeployedAt) update.safeDeployedAt = executedAt
   // オーナーの変更が実行されたら、保存した Safe のオーナーの並びとしきい値をチェーンから読み直す
   if (tx.kind === 'owner_change') {
@@ -533,21 +501,5 @@ export async function confirmExecution(
   }
   if (Object.keys(update).length > 0) {
     await db.update(groups).set(update).where(eq(groups.id, group.id))
-  }
-  // 店舗の Safe の提案では、本部の Safe も同じ取引の中で配置することがある
-  if (group.kind === 'store') {
-    const hq = await db.query.groups.findFirst({
-      where: eq(groups.kind, 'headquarters'),
-    })
-    if (
-      hq?.safeAddress &&
-      !hq.safeDeployedAt &&
-      (await hasCode(getAddress(hq.safeAddress)))
-    ) {
-      await db
-        .update(groups)
-        .set({ safeDeployedAt: executedAt })
-        .where(eq(groups.id, hq.id))
-    }
   }
 }

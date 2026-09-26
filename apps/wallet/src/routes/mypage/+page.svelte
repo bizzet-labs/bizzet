@@ -9,17 +9,12 @@ import { callApi } from '@/approvals.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
 import { endSession, loadPasskey, type StoredPasskey } from '@/passkey.js'
-import { getSafeAddress, isSafeDeployed } from '@/safe.js'
-import { sendPasskeyTransaction } from '@/user-operation.js'
+import { getSafeAddress } from '@/safe.js'
 import { goto } from '$app/navigation'
 
 let safeAddress = $state('')
-let deployed = $state<boolean | null>(null)
 let status = $state('読み込み中…')
 let passkey: StoredPasskey | null = null
-let creating = $state(false)
-let createError = $state('')
-let transactionHash = $state('')
 
 type PasswordLink = { url: string; expiresAt: string }
 type Me = {
@@ -95,30 +90,11 @@ onMount(async () => {
   try {
     const address = await getSafeAddress(passkey)
     safeAddress = address
-    deployed = await isSafeDeployed(address)
   } catch (e) {
     console.error(e)
     status = 'アドレスを取得できませんでした'
   }
 })
-
-// 仮置き：最初の取引として、Safe から自分自身へ 0 ETH を送る。Safe と署名者は、この取引の中で作られる
-async function handleCreate() {
-  if (!passkey || !safeAddress) return
-  creating = true
-  createError = ''
-  try {
-    transactionHash = await sendPasskeyTransaction(passkey, [
-      { to: safeAddress as `0x${string}`, value: 0n, data: '0x' },
-    ])
-    deployed = true
-  } catch (e) {
-    console.error(e)
-    createError = 'ウォレットを作成できませんでした'
-  } finally {
-    creating = false
-  }
-}
 
 async function handleLogout() {
   await endSession()
@@ -203,7 +179,7 @@ async function handleLogout() {
 				<div class="flex items-start gap-3 border-b px-6 py-3">
 					<WalletIcon class="text-muted-foreground mt-0.5 size-5" />
 					<div class="flex min-w-0 flex-1 flex-col gap-1">
-						<span class="font-medium">ウォレットのアドレス</span>
+						<span class="font-medium">承認の送信に使うアカウント</span>
 						{#if safeAddress}
 							<a
 								href={`https://sepolia.etherscan.io/address/${safeAddress}`}
@@ -213,25 +189,9 @@ async function handleLogout() {
 							>
 								{safeAddress}
 							</a>
-							{#if deployed === false}
-								<span class="text-muted-foreground text-xs">未作成（最初の取引で作成されます）</span>
-								<Button size="sm" class="mt-2 self-start" onclick={handleCreate} disabled={creating}>
-									{creating ? '作成中…' : 'ウォレットを作成'}
-								</Button>
-								{#if createError}
-									<span class="text-destructive text-xs">{createError}</span>
-								{/if}
-							{/if}
-							{#if transactionHash}
-								<a
-									href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
-									target="_blank"
-									rel="noreferrer"
-									class="text-primary text-xs hover:underline"
-								>
-									作成した取引を見る
-								</a>
-							{/if}
+							<span class="text-muted-foreground text-xs">
+								承認がそろった出金を送るときに使う、あなた専用のアカウントです。資金は持たず、初めて出金を実行するときに自動で作られます
+							</span>
 						{:else}
 							<span class="text-muted-foreground text-xs">{status}</span>
 						{/if}

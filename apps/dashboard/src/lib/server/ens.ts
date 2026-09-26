@@ -1,5 +1,4 @@
 import {
-  DEFAULT_SEPOLIA_RPC_URL,
   isValidLabel,
   type ReceivingCurrency,
   type ResolvedGroupName,
@@ -9,11 +8,9 @@ import {
   writeGroupRecords,
 } from '@bizzet/contracts'
 import { and, type Db, type ensSettings, eq, groups, ne } from '@bizzet/db'
-import { createWalletClient, getAddress, type Hex, http } from 'viem'
-import { privateKeyToAccount } from 'viem/accounts'
-import { sepolia } from 'viem/chains'
-import { env } from '$env/dynamic/private'
+import { getAddress, type Hex } from 'viem'
 import { publicClient } from './chain'
+import { isOperatorConfigured, operatorWallet } from './operator'
 
 type Group = typeof groups.$inferSelect
 type EnsSettings = typeof ensSettings.$inferSelect
@@ -31,19 +28,8 @@ export async function getEnsSettings(db: Db): Promise<EnsSettings | null> {
   return (await db.query.ensSettings.findFirst()) ?? null
 }
 
-// 運用者の鍵。未設定なら、名前の登録とレコードの書き込みを行わない
-function operatorWallet() {
-  const key = env.ENS_OPERATOR_PRIVATE_KEY
-  if (!key) return null
-  return createWalletClient({
-    account: privateKeyToAccount(key as Hex),
-    chain: sepolia,
-    transport: http(env.SEPOLIA_RPC_URL || DEFAULT_SEPOLIA_RPC_URL),
-  })
-}
-
 export function isEnsOperatorConfigured() {
-  return Boolean(env.ENS_OPERATOR_PRIVATE_KEY)
+  return isOperatorConfigured()
 }
 
 // グループの ENS の名前。本部は本部の名前そのもの、店舗はラベルがあるときだけ名前を持つ
