@@ -52,6 +52,10 @@ const recordsTxHash = await writeGroupRecords(
   },
 )
 
+// このパッケージは DB に依存しないため、ens_settings への保存は SQL を出力して運用者が流す
+const expiresAt = new Date(Number(setup.expiry) * 1000).toISOString()
+const sql = `INSERT INTO ens_settings (id, hq_name, subregistry_address, resolver_address, expires_at) VALUES ('default', '${setup.hqName}', '${setup.subregistry}', '${setup.resolver}', '${expiresAt}') ON CONFLICT (id) DO UPDATE SET hq_name = EXCLUDED.hq_name, subregistry_address = EXCLUDED.subregistry_address, resolver_address = EXCLUDED.resolver_address, expires_at = EXCLUDED.expires_at;`
+
 console.log(
   JSON.stringify(
     {
@@ -60,8 +64,10 @@ console.log(
       subregistry: setup.subregistry,
       resolver: setup.resolver,
       expiry: setup.expiry.toString(),
+      expiresAt,
       registerTxHash: setup.registerTxHash,
       recordsTxHash,
+      sql,
     },
     null,
     2,
