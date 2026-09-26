@@ -1,5 +1,4 @@
-import { erc20Abi, type TokenSymbol, tokens } from '@bizzet/contracts'
-import { type Address, getAddress } from 'viem'
+import { readTokenBalances, type TokenSymbol } from '@bizzet/contracts'
 import { publicClient } from '$lib/chain'
 
 // 1つの Safe の通貨ごとの残高（最小単位の10進文字列）。個別の呼び出しが失敗した通貨は null
@@ -10,31 +9,18 @@ export type TokenBalances = Record<TokenSymbol, string | null>
 export async function getBalances(
   addresses: readonly string[],
 ): Promise<Map<string, TokenBalances>> {
-  const unique = [...new Set(addresses.map((a) => a.toLowerCase()))]
+  const onchain = await readTokenBalances(publicClient, addresses)
   const result = new Map<string, TokenBalances>()
-  if (unique.length === 0) return result
-
-  const contracts = unique.flatMap((address) =>
-    tokens.map((token) => ({
-      address: token.address,
-      abi: erc20Abi,
-      functionName: 'balanceOf' as const,
-      args: [getAddress(address) as Address] as const,
-    })),
-  )
-  const responses = await publicClient.multicall({
-    contracts,
-    allowFailure: true,
-  })
-
-  unique.forEach((address, i) => {
-    const balances = {} as TokenBalances
-    tokens.forEach((token, j) => {
-      const response = responses[i * tokens.length + j]
-      balances[token.symbol] =
-        response?.status === 'success' ? response.result.toString() : null
-    })
-    result.set(address, balances)
-  })
+  for (const [address, balances] of onchain) {
+    result.set(
+      address,
+      Object.fromEntries(
+        Object.entries(balances).map(([symbol, value]) => [
+          symbol,
+          value === null ? null : value.toString(),
+        ]),
+      ) as TokenBalances,
+    )
+  }
   return result
 }

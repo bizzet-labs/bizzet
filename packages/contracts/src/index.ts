@@ -33,6 +33,12 @@ export {
   writeGroupRecords,
 } from './ens.ts'
 export {
+  isDeployed,
+  type OnchainTokenBalances,
+  readSafeNonce,
+  readTokenBalances,
+} from './onchain.ts'
+export {
   EIP1271_MAGIC_VALUE,
   encodeCreateSigner,
   type PasskeyPublicKey,

@@ -4,7 +4,7 @@ import {
   erc20Abi,
   findToken,
   hashSafeTransaction,
-  safeOwnerAbi,
+  readSafeNonce,
   tokens,
 } from '@bizzet/contracts'
 import {
@@ -89,19 +89,8 @@ export function chooseNonce(onchain: bigint, used: Iterable<bigint>) {
   return nonce
 }
 
-async function isDeployed(address: Address) {
-  const code = await publicClient.getCode({ address })
-  return code !== undefined && code !== '0x'
-}
-
 async function nextSafeNonce(db: Db, safe: Address) {
-  const onchain = (await isDeployed(safe))
-    ? await publicClient.readContract({
-        address: safe,
-        abi: safeOwnerAbi,
-        functionName: 'nonce',
-      })
-    : 0n
+  const onchain = await readSafeNonce(publicClient, safe)
   const pending = await db.query.safeTransactions.findMany({
     where: and(
       eq(safeTransactions.safeAddress, safe.toLowerCase()),

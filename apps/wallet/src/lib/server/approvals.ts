@@ -10,7 +10,9 @@ import {
   findToken,
   hashNestedSafeTransaction,
   hashSafeTransaction,
+  isDeployed,
   type PasskeySignature,
+  readSafeNonce,
   type SafeTransactionData,
   safeExecutionEventsAbi,
   safeOwnerAbi,
@@ -34,11 +36,10 @@ import {
   decodeEventLog,
   getAddress,
   type Hex,
-  hexToBigInt,
   isAddressEqual,
-  slice,
 } from 'viem'
 import { publicClient } from '$lib/chain'
+import { toCoordinates } from '$lib/passkey'
 import {
   type Group,
   getVisibleGroups,
@@ -82,14 +83,6 @@ export type ApprovalItem = {
   unsignable: Unsignable | null
   // しきい値の署名がそろい、実行を送れる
   executable: boolean
-}
-
-function coordinates(publicKey: string) {
-  const key = publicKey as Hex
-  return {
-    x: hexToBigInt(slice(key, 0, 32)),
-    y: hexToBigInt(slice(key, 32, 64)),
-  }
 }
 
 function toSafeTransactionData(tx: SafeTransaction): SafeTransactionData {
@@ -285,7 +278,7 @@ export async function addSignature(
     error(403, '本部の Owner と Approver だけが署名できます')
   }
   const { tx, hq, hash, threshold } = await loadProposal(db, own, id)
-  const { x, y } = coordinates(passkey.publicKey)
+  const { x, y } = toCoordinates(passkey.publicKey as Hex)
   const signer = await publicClient.readContract({
     address: addresses.passkey.signerFactory,
     abi: signerFactoryAbi,
@@ -332,16 +325,13 @@ export async function addSignature(
   return { signatureCount: rows.length, threshold }
 }
 
-async function hasCode(address: Address) {
-  const code = await publicClient.getCode({ address })
-  return code !== undefined && code !== '0x'
-}
-
 export type ExecutionCall = { to: Address; data: Hex }
 
 // グループの Safe は、ダッシュボードの「Safe を配置」でだけ作る。未配置なら実行を止める
 async function requireDeployed(group: Group, label: string) {
-  if (!(await hasCode(getAddress(group.safeAddress as string)))) {
+  if (
+    !(await isDeployed(publicClient, getAddress(group.safeAddress as string)))
+  ) {
     error(
       409,
       `${label}の Safe がまだ配置されていません。ダッシュボードで配置してください`,
@@ -351,13 +341,7 @@ async function requireDeployed(group: Group, label: string) {
 
 // 実行する Safe のノンスが提案のノンスと一致することを確かめる。未配置の Safe のノンスは 0 とみなす
 async function assertNextNonce(safe: Address, nonce: bigint) {
-  const current = (await hasCode(safe))
-    ? await publicClient.readContract({
-        address: safe,
-        abi: safeOwnerAbi,
-        functionName: 'nonce',
-      })
-    : 0n
+  const current = await readSafeNonce(publicClient, safe)
   if (current !== nonce) {
     error(409, 'この提案より前のノンスの提案が、まだ実行されていません')
   }
@@ -403,10 +387,10 @@ export async function buildExecution(
   await requireDeployed(hq, '本部')
   if (store) await requireDeployed(store, '店舗')
   for (const r of usable) {
-    if (!(await hasCode(getAddress(r.signer)))) {
+    if (!(await isDeployed(publicClient, getAddress(r.signer)))) {
       calls.push({
         to: addresses.passkey.signerFactory,
-        data: encodeCreateSigner(coordinates(r.publicKey)),
+        data: encodeCreateSigner(toCoordinates(r.publicKey as Hex)),
       })
     }
   }
