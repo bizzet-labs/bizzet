@@ -10,6 +10,7 @@ import * as Sidebar from '@/components/ui/sidebar/index.js'
 import { useSidebar } from '@/components/ui/sidebar/index.js'
 import { m } from '$lib/paraglide/messages.js'
 import { getLocale, type Locale, setLocale } from '$lib/paraglide/runtime'
+import type { Role } from '$lib/roles'
 
 let {
   member,
@@ -17,7 +18,7 @@ let {
   member: {
     email: string
     name: string | null
-    role: 'owner' | 'approver' | 'viewer'
+    role: Role
   }
 } = $props()
 const sidebar = useSidebar()

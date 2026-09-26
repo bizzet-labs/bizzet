@@ -2,6 +2,7 @@ import { createColumnHelper, renderComponent } from '@tanstack/svelte-table'
 import type { DataTableFeatures } from '@/components/data-table/data-table-features.js'
 import { formatDate } from '$lib/format'
 import { m } from '$lib/paraglide/messages.js'
+import type { Role } from '$lib/roles'
 import EmphasisCell from './emphasis-cell.svelte'
 import InvitationKindBadge from './invitation-kind-badge.svelte'
 import LoginMethods from './login-methods.svelte'
@@ -10,8 +11,6 @@ import MemberNameCell from './member-name-cell.svelte'
 import RevokeInvitationButton from './revoke-invitation-button.svelte'
 import RoleBadge from './role-badge.svelte'
 
-export type Role = 'owner' | 'approver' | 'viewer'
-export type GroupKind = 'headquarters' | 'store'
 export type InvitationKind = 'member' | 'add_passkey' | 'add_password'
 
 export type MemberRow = {

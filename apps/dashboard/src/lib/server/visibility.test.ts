@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import type { GroupKind } from '$lib/roles'
 import { type Group, sortGroups } from './visibility'
 
 // テスト用のグループ。sortGroups が読むのは kind と createdAt だけなので、他の列は省く
-function group(
-  kind: 'headquarters' | 'store',
-  createdAt: string,
-  id: string = kind,
-) {
+function group(kind: GroupKind, createdAt: string, id: string = kind) {
   return {
     id,
     kind,

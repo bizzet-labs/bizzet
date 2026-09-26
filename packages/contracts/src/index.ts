@@ -1,4 +1,5 @@
 export { sepolia } from './addresses/sepolia.ts'
+export { createSepoliaPublicClient, DEFAULT_SEPOLIA_RPC_URL } from './chain.ts'
 export {
   encodeCreateSigner,
   type PasskeyPublicKey,

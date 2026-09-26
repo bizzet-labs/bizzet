@@ -7,13 +7,14 @@ import UsersIcon from '@lucide/svelte/icons/users'
 import type { ComponentProps } from 'svelte'
 import * as Sidebar from '@/components/ui/sidebar/index.js'
 import { m } from '$lib/paraglide/messages.js'
+import type { Role } from '$lib/roles'
 import NavMain, { type NavItem } from './nav-main.svelte'
 import NavUser from './nav-user.svelte'
 
 type Member = {
   email: string
   name: string | null
-  role: 'owner' | 'approver' | 'viewer'
+  role: Role
 }
 
 let {

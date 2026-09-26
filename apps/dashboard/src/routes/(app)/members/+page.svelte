@@ -13,12 +13,12 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field/index.js'
 import { Input } from '@/components/ui/input/index.js'
 import { enhance } from '$app/forms'
 import { m } from '$lib/paraglide/messages.js'
+import type { Role } from '$lib/roles'
 import AssignmentFields from './assignment-fields.svelte'
 import {
   createMemberColumns,
   invitationColumns,
   type MemberRow,
-  type Role,
 } from './columns.js'
 
 let { data, form } = $props()
