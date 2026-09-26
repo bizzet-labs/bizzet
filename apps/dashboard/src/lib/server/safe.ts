@@ -40,8 +40,9 @@ export async function isDeployed(address: Address) {
   return code !== undefined && code !== '0x'
 }
 
-// Safe のノンスを割り当てる。チェーン上のノンス（未配置なら 0）と、送信前・送信済みの提案のうち
-// 最大のノンスの次の、大きい方を使う
+// Safe のノンスを割り当てる。チェーン上のノンス（未配置なら 0）以上で、送信前・送信済みの提案が
+// まだ使っていない最小の番号を使う。却下で空いた番号は次の提案が埋めるため、後ろの提案は署名を
+// やり直さずに済み、空いた番号の提案が実行されるのを待つだけになる
 export async function nextSafeNonce(db: Db, safe: Address) {
   const onchain = (await isDeployed(safe))
     ? await publicClient.readContract({
@@ -55,9 +56,12 @@ export async function nextSafeNonce(db: Db, safe: Address) {
       eq(safeTransactions.safeAddress, safe.toLowerCase()),
       inArray(safeTransactions.status, ['open', 'submitted']),
     ),
+    columns: { nonce: true },
   })
-  const maxPending = pending.reduce((max, tx) => Math.max(max, tx.nonce), -1)
-  return BigInt(Math.max(Number(onchain), maxPending + 1))
+  const used = new Set(pending.map((tx) => BigInt(tx.nonce)))
+  let nonce = onchain
+  while (used.has(nonce)) nonce += 1n
+  return nonce
 }
 
 export type CreateSafeTransactionInput = {
