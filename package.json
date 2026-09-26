@@ -10,6 +10,7 @@
     "dev:docs": "pnpm --filter @bizzet/docs run dev",
     "dev:dashboard": "pnpm --filter @bizzet/dashboard run dev",
     "dev:wallet": "pnpm --filter @bizzet/wallet run dev",
+    "test": "pnpm -r run test",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:generate": "pnpm --filter @bizzet/db run generate",

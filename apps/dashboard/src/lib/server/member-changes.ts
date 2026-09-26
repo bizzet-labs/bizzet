@@ -23,6 +23,7 @@ import {
 import { type Address, decodeFunctionData, getAddress } from 'viem'
 import { env } from '$env/dynamic/public'
 import { m } from '$lib/paraglide/messages.js'
+import { isRole, isRoleAllowedInGroup, ROLES, type Role } from '$lib/roles'
 import type { Member } from './auth'
 import { createSafeTransaction, getHeadquarters } from './safe'
 import type { Group } from './visibility'
@@ -30,8 +31,10 @@ import type { Group } from './visibility'
 // メンバーの編集と削除の規則。ダッシュボードの権限は DB のロールに従い、
 // 本部の Safe のオーナーの顔ぶれが変わる場合だけ、オンチェーンの変更を2人承認の提案として作る
 
-export const ROLES = ['owner', 'approver', 'viewer'] as const
-export type Role = (typeof ROLES)[number]
+export type { Role }
+// ROLES・Role・isRole・isRoleAllowedInGroup はクライアントのフォーム検証（members/new/schema.ts など）
+// からも使うため $lib/roles に置き、ここでは既存の呼び出し元向けに再公開するだけにする
+export { isRole, isRoleAllowedInGroup, ROLES }
 
 // 本部の Safe のオーナーは3人以上。1人がパスキーを失っても、残る2人で入れ替えを承認できるようにするため
 export const MIN_HQ_SAFE_OWNERS = 3
@@ -52,15 +55,6 @@ export class MemberChangeError extends Error {
   ) {
     super(message)
   }
-}
-
-export function isRole(value: unknown): value is Role {
-  return typeof value === 'string' && ROLES.includes(value as Role)
-}
-
-// 店舗のグループに割り当てられるのは Viewer だけ（Owner と Approver は本部の Safe のオーナーになるため）
-export function isRoleAllowedInGroup(kind: Group['kind'], role: Role) {
-  return kind === 'headquarters' || role === 'viewer'
 }
 
 // 本部の Safe のオーナーになるロールか。本部の Owner と Approver だけが署名者を Safe のオーナーに持つ
