@@ -73,6 +73,17 @@ export {
   tokens,
 } from './safe-transaction.ts'
 export {
+  type ExactOutputParams,
+  encodePermit2Approve,
+  encodeSwapExactOutputToRecipient,
+  JPYC_USDC_POOL_KEY,
+  type PoolKey,
+  quoteExactOutput,
+  readPermit2Allowance,
+  type SwapToRecipientParams,
+  uniswapV4,
+} from './uniswap.ts'
+export {
   encodePasskeySignature,
   encodeSafeSignatures,
   hashSafeOperation,
