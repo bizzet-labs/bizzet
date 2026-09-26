@@ -51,7 +51,7 @@ ENSv2 を bizzet に組み込むための設計を、実装できる粒度でま
 | 受取通貨 | テキスト `bizzet.currency` | `JPYC` か `USDC` |
 | 表示名 | テキスト `description` | グループの名前 |
 
-グループの Safe が未設定のうちは、アドレスのレコードを書かず、Safe の設定を確定した時点で書きます。受取通貨の既定値は `JPYC` とし、本部の Owner がグループの設定画面で変えるとテキストレコードを書き換えます。レコードの書き込みは、リゾルバの `multicall` で1回の取引にまとめます。
+グループの Safe が未設定のうちは、アドレスのレコードを書かず、Safe の設定を確定した時点で書きます。受取通貨の既定値は `JPYC` とし、本部の Owner がグループの設定画面で変えるとテキストレコードを書き換えます。レコードの書き込みは、リゾルバの `setAddress` と `setText` を `multicall` で1回の取引にまとめます。ENSv2 のリゾルバはノードのハッシュではなく DNS 形式にエンコードした名前でレコードを指すため、どちらの関数にもエンコードした名前を渡します。
 
 ## 権限
 
@@ -68,8 +68,8 @@ ENSv2 を bizzet に組み込むための設計を、実装できる粒度でま
 
 初期セットアップは、`packages/contracts` のスクリプトを運用者が1回実行して行います。
 
-1. VerifiableFactory の `deployProxy` で、サブネームのレジストリ（UserRegistryImpl）のプロキシを配置し、`initialize` で運用者の鍵にレジストリのロールを与える
-2. 同じく、リゾルバ（PermissionedResolverImpl）のプロキシを配置し、`initialize` で運用者の鍵にリゾルバのロールを与える
+1. VerifiableFactory の `deployProxy` で、サブネームのレジストリ（UserRegistryImpl）のプロキシを配置し、`deployProxy` の `data` に渡した `initialize` で運用者の鍵にレジストリのロールを与える
+2. 同じく、リゾルバ（PermissionedResolverImpl）のプロキシを配置し、`initialize` で運用者の鍵にリゾルバのロールを与える。プロキシの配置先は呼び出し元とソルトだけで決まるため、手順1と別のソルトを使い、配置先は `ProxyDeployed` イベントから読む
 3. MockUSDC を `mint` で発行し、ETHRegistrar に登録料金ぶんを `approve` する
 4. ETHRegistrar の `makeCommitment` と `commit` で登録を予約し、60秒以上待つ。予約は1日で失効する
 5. ETHRegistrar の `register` で、持ち主を運用者の鍵、サブネームのレジストリを手順1のプロキシ、リゾルバを手順2のプロキシ、期間を1年、支払いのトークンを MockUSDC として登録する

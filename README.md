@@ -44,8 +44,11 @@ Everything here runs on Ethereum Sepolia only.
 | Passkey (WebAuthn) signature encoding and the viem smart account `toSafePasskeyAccount` | Fork test: passkey-signed UserOperation executed via EntryPoint `handleOps` |
 | ERC-20 transfer and owner-change encoders | Used by the dashboard's proposals; not executed on chain yet |
 | Zodiac Roles v2 setup encoding (deploy via ModuleProxyFactory, scope a keeper to JPYC/USDC `transfer` to the HQ Safe only, enable the module) in one MultiSendCallOnly delegatecall | Fork test: keeper can transfer only to the HQ Safe; other recipients and functions are rejected |
+| `execTransaction` encoding and passkey signature checks via the signer factory's `isValidSignatureForSigner` | Fork test: two passkey owners' signatures deploy the HQ Safe and execute a payout in one UserOperation; one signature is rejected |
+| ENSv2 on Sepolia: HQ `.eth` registration (commit/register with MockUSDC), a subname registry and PermissionedResolver deployed via VerifiableFactory, store subnames, `addr` + `bizzet.currency` + `description` records in one multicall, and `resolveGroupName` through UniversalResolverV2 | Fork tests: register, re-run idempotently, write records and resolve them through the Universal Resolver |
+| `ens:setup` script that performs the one-time ENS setup and prints the `ens_settings` row | Same code path as the fork tests; not yet run on live Sepolia |
 
-The 5 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed UserOperation executed end to end through EntryPoint `handleOps`, deploying the Safe and its signer; group Safe address and SafeTx hash match the deployed Safe; the keeper can only transfer to the HQ Safe.
+The 13 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed UserOperation executed end to end through EntryPoint `handleOps`, deploying the Safe and its signer; group Safe address and SafeTx hash match the deployed Safe; the keeper can only transfer to the HQ Safe; two-passkey approval and execution of an HQ payout; and ENSv2 registration, records and resolution.
 
 **Live on Sepolia.** A passkey-signed UserOperation (test P-256 key) was sent through Pimlico's bundler and paymaster via the wallet's server proxy, deploying a Safe and its passkey signer with gas sponsored: [0xe1bfcc21…a6c4](https://sepolia.etherscan.io/tx/0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4).
 
@@ -58,7 +61,12 @@ The 5 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed
 | Invite page that registers a passkey to the DB (member and add-passkey links) | Manual check with links issued by the dashboard |
 | Test Safe creation button that sends a gasless UserOperation via Pimlico | Manual check; the live Sepolia tx above |
 | `/api/bundler` server proxy that keeps the Pimlico API key server-side and forwards only an allowlisted set of methods | Manual check; the live Sepolia tx above |
-| Home, business and my page screens (placeholders; logout works) | Manual check |
+| Home: balances of the member's groups (one multicall) and the pending-approval count | API check against a throwaway DB and a dev server |
+| Approval screen: members sign HQ Safe proposals with their passkey; the server recomputes the safeTxHash, checks the signer is an owner and verifies the signature on chain before storing it | API check (wrong hash, wrong key and duplicate signatures are rejected); fork test for the signature format |
+| Execution: once the threshold is met, the last signer submits `execTransaction` through their passkey account and Pimlico; the proposal is marked executed only after an `ExecutionSuccess` log | Fork test; not yet sent on live Sepolia |
+| Customer payment page `/pay/<ens-name>`: resolves the store's ENS name to its Safe address and receiving currency, shows the price in yen and JPYC/USDC, pays with the customer's browser wallet (ERC-20 `transfer`), and shows 処理中 then 済 | vitest for price parsing and conversion; page render check; not yet paid from a real wallet |
+| Price-tag page `/pay`: builds the payment URL and a printable QR code | Page render check |
+| Business and my page screens (logout works) | Manual check |
 
 ### apps/dashboard
 
@@ -74,8 +82,9 @@ The 5 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed
 | Deposit indexer: incremental ERC-20 Transfer ingestion with a time budget, and `/api/cron/deposits` protected by a Bearer token | Manual check |
 | Bridge page with an empty state (the beta has no bridge) | Manual check |
 | Japanese and English via Paraglide (cookie, then browser language, then ja) and a shadcn sidebar | Manual check |
+| ENS: a label field on store creation that registers `<label>.<hq>.eth` and writes its records, a retry and currency edit on group settings, and the resolved address and currency on group pages with a warning if ENS and the DB disagree | `svelte-check`; registration code covered by the ENS fork tests |
 
-vitest covers helper logic only: the dashboard's 11 tests cover role rules, member-change helpers and group ordering, and the wallet's 2 tests cover passkey public-key parsing. Type checks pass for both apps.
+vitest covers helper logic only: the dashboard's 11 tests cover role rules, member-change helpers and group ordering, and the wallet's 21 tests cover passkey public-key parsing, price-tag URL parsing and conversion, and which proposals a member can sign. Type checks pass for both apps.
 
 ### packages/db
 
@@ -83,36 +92,39 @@ Drizzle schema and migrations, with local Postgres via docker compose plus a loc
 
 ### docs
 
-A Docusaurus whitepaper and design docs in Japanese (16 pages) with no open items. These describe the full design, including the parts not built yet.
+A Docusaurus whitepaper and design docs in Japanese (18 pages) with no open items. These describe the full design, including the parts not built yet.
 
 ### 日本語
 
 以下はすべて Ethereum Sepolia のみで動きます。
 
-- **packages/contracts**：Sepolia の各コントラクト（Safe v1.4.1、Safe4337Module v0.3.0、EntryPoint v0.7、パスキー署名者 v0.2.1、Zodiac Roles v2.1.1、JPYC、USDC）のアドレス確認、グループ用 Safe（モジュールなし）と relayer 用 Safe（Safe4337Module とパスキー署名者を `setup()` 内の MultiSend で作成）の calldata 組み立て、`predictSafeAddress`、SafeOp と SafeTx の EIP-712 ハッシュ、パスキー署名のエンコード、viem のスマートアカウント `toSafePasskeyAccount`、ERC-20 送金とオーナー変更のエンコーダ、キーパーを「HQ Safe への JPYC/USDC `transfer` だけ」に絞る Roles v2 の設定エンコード。Sepolia フォークテスト 5 件で確認済み。
+- **packages/contracts**：Sepolia の各コントラクト（Safe v1.4.1、Safe4337Module v0.3.0、EntryPoint v0.7、パスキー署名者 v0.2.1、Zodiac Roles v2.1.1、JPYC、USDC）のアドレス確認、グループ用 Safe（モジュールなし）と relayer 用 Safe（Safe4337Module とパスキー署名者を `setup()` 内の MultiSend で作成）の calldata 組み立て、`predictSafeAddress`、SafeOp と SafeTx の EIP-712 ハッシュ、パスキー署名のエンコード、viem のスマートアカウント `toSafePasskeyAccount`、ERC-20 送金とオーナー変更のエンコーダ、キーパーを「HQ Safe への JPYC/USDC `transfer` だけ」に絞る Roles v2 の設定エンコード。ENSv2 の本部の名前の登録・サブネームのレジストリとリゾルバの配置・店舗のサブネーム・レコードの書き込み・Universal Resolver での解決、`execTransaction` のエンコードとパスキー署名の検証も含みます。Sepolia フォークテスト 13 件で確認済み。
 - **Sepolia 上での実行**：テスト用 P-256 鍵で署名した UserOperation を、ウォレットのサーバープロキシ経由で Pimlico の bundler と paymaster に送り、ガス代をスポンサーしてもらった状態で Safe とパスキー署名者を配置しました（上記の tx）。
-- **apps/wallet**：パスキーの登録とログイン（パスキー情報はブラウザの localStorage に保持）、`getSigner` による署名者アドレスの算出、招待リンクからのパスキー登録、Pimlico 経由のガスレスなテスト用 Safe 作成、API キーをサーバー側に置き許可したメソッドだけを転送する `/api/bundler`。ホーム・ビジネス・マイページは仮の画面です。
-- **apps/dashboard**：Better Auth のメールとパスワードによるログインと招待制の参加、メンバーの一覧・招待・編集・削除（HQ Safe のオーナーが変わる場合は owner_change の提案を作成）、パスキー追加リンクの発行、グループの一覧・店舗作成・HQ Safe と店舗 Safe の作成・Roles v2 設定の提案、出金提案の一覧・詳細・作成・却下・実行済みへの同期、multicall による残高表示、入金インデクサと Bearer トークンで保護した cron、空状態のブリッジ画面、Paraglide による日英切り替え。
+- **apps/wallet**：パスキーの登録とログイン（パスキー情報はブラウザの localStorage に保持）、`getSigner` による署名者アドレスの算出、招待リンクからのパスキー登録、Pimlico 経由のガスレスなテスト用 Safe 作成、API キーをサーバー側に置き許可したメソッドだけを転送する `/api/bundler`、所属グループの残高と承認待ちの件数を出すホーム、本部の Safe の提案へのパスキー署名（サーバーがチェーン上で検証）としきい値到達後の実行、ENS の名前で受取先を解決してブラウザウォレットで JPYC か USDC を払う決済ページ `/pay/<ENS 名>` と、値札の QR を作る `/pay`。
+- **apps/dashboard**：Better Auth のメールとパスワードによるログインと招待制の参加、メンバーの一覧・招待・編集・削除（HQ Safe のオーナーが変わる場合は owner_change の提案を作成）、パスキー追加リンクの発行、グループの一覧・店舗作成・HQ Safe と店舗 Safe の作成・Roles v2 設定の提案、出金提案の一覧・詳細・作成・却下・実行済みへの同期、multicall による残高表示、入金インデクサと Bearer トークンで保護した cron、空状態のブリッジ画面、Paraglide による日英切り替え、店舗の作成時の ENS のサブネームの登録と、グループの画面での解決した受取先と受取通貨の表示。
 - **packages/db**：Drizzle のスキーマとマイグレーション、docker compose のローカル Postgres とローカルの Neon HTTP プロキシ。
-- **テスト**：vitest（dashboard 11 件、wallet 2 件。いずれも補助関数のテスト）とフォークテスト 5 件が通り、両アプリの型チェックも通ります。画面の機能は手動で確認しています。
-- **docs**：日本語のホワイトペーパーと設計書（16 ページ、未決事項なし）。
+- **テスト**：vitest（dashboard 11 件、wallet 21 件。いずれも補助関数のテスト）とフォークテスト 13 件が通り、両アプリの型チェックも通ります。画面の機能は手動で確認しています。
+- **docs**：日本語のホワイトペーパーと設計書（18 ページ、未決事項なし）。
 
-## In progress
+## Built but not yet run on live Sepolia
 
-- **ENS integration on ENSv2 (Sepolia)**: store subnames and receiving-address text records. This is being implemented before submission and does not work yet.
+- **ENS setup**: the `ens:setup` script and store subname registration are verified on a Sepolia fork only; the live HQ name has not been registered yet, so `/pay/<name>` shows "no receiving address" until it is.
+- **Payout execution and customer payments**: verified in fork tests and render checks, not yet with a real passkey or a real customer wallet.
 
 ### 日本語
 
-- **ENSv2（Sepolia）との連携**：店舗のサブネームと受取アドレスのテキストレコード。提出までに実装中で、まだ動作しません。
+- **ENS のセットアップ**：`ens:setup` のスクリプトと店舗のサブネームの登録は Sepolia のフォークでだけ確かめており、実際の Sepolia では本部の名前をまだ登録していません。登録するまで `/pay/<名前>` は受取先がない旨を表示します。
+- **出金の実行と客の支払い**：フォークテストと画面の表示で確かめましたが、実物のパスキーと客のウォレットではまだ試していません。
 
 ## Not built yet (designed in docs, planned)
 
 The following are designed in `docs/` but are not implemented in this repo.
 
-- **Customer payments**: the Checkout contract (payment, Uniswap v4 swap, `Paid` event), the e-ink price tag and the customer checkout page. The customer payment flow is therefore not implemented.
+- **Checkout contract**: payment with a Uniswap v4 swap and a `Paid` event, and the e-ink price tag. Customers pay today with a direct ERC-20 transfer to the store Safe resolved through ENS, so no swap happens.
 - **Receipts**: Semaphore v4 purchase proofs.
-- **Wallet side of approvals**: the approval screen (passkey signing of proposals), home balance, refund requests and issuing add-password links.
-- **On-chain execution of proposals**: relayer submission of fully signed Safe transactions (`execTransaction`). Proposals are created in the database but are not yet signed or executed on chain.
+- **Store Safe approvals**: signing store Safe proposals needs HQ owners to sign an HQ Safe message (nested ERC-1271); the approval screen shows these as not signable.
+- **Relayer Safe**: execution currently goes through the last signer's own passkey account instead of a bizzet relayer Safe.
+- **Wallet extras**: refund requests and issuing add-password links.
 - **Server-side passkey verification** at registration, and a server-verified wallet login.
 - **Operations**: auto-bridge and CCTP; Gelato keeper deployment and on-chain sweep execution; an automatic owner-add proposal when an HQ member registers a passkey after setup.
 
@@ -120,10 +132,11 @@ The following are designed in `docs/` but are not implemented in this repo.
 
 以下は `docs/` で設計済みですが、このリポジトリにはまだ実装していません。
 
-- **顧客の決済**：Checkout コントラクト（支払い、Uniswap v4 のスワップ、`Paid` イベント）、電子ペーパーの値札、顧客向けの決済画面。そのため顧客の決済フローは動きません。
+- **Checkout コントラクト**：Uniswap v4 のスワップを伴う支払いと `Paid` イベント、電子ペーパーの値札。いまの客の支払いは、ENS で解決した店舗の Safe への ERC-20 の直接の送金で、交換は行いません。
 - **レシート**：Semaphore v4 による購入証明。
-- **ウォレット側の承認**：承認画面（提案へのパスキー署名）、ホームの残高、返金依頼、パスワード追加リンクの発行。
-- **提案のオンチェーン実行**：署名が揃った Safe トランザクションを relayer が `execTransaction` で送る処理。提案は DB に作られますが、署名もオンチェーン実行もまだです。
+- **店舗の Safe の承認**：店舗の Safe の提案への署名には、本部の Owner による本部の Safe のメッセージへの署名（入れ子の ERC-1271）が要り、承認画面では署名できない提案として表示します。
+- **中継用の Safe**：実行は、bizzet の中継用の Safe ではなく、最後に署名したメンバー自身のパスキーのアカウントから送っています。
+- **ウォレットのその他**：返金依頼、パスワード追加リンクの発行。
 - **パスキーのサーバー側検証**（登録時）と、サーバーで検証するウォレットログイン。
 - **運用**：自動ブリッジと CCTP、Gelato キーパーの配置とオンチェーンでの集金実行、セットアップ後に HQ メンバーがパスキーを登録したときのオーナー追加提案の自動作成。
 
@@ -135,12 +148,12 @@ The beta runs on Ethereum Sepolia only.
 | --- | --- | --- |
 | HQ Safe | Safe v1.4.1 with 3+ passkey owners and threshold 2 | Setup built; setup verified in fork tests |
 | Store Safes | Safe whose sole owner is the HQ Safe | Setup built |
-| Member approval | Members sign Safe transactions (EIP-712 SafeTx) with passkeys | Hashing built; wallet approval screen not built |
-| Relayer | A bizzet relayer Safe with Safe4337Module submits signed transactions via ERC-4337 | Gasless UserOperation verified on Sepolia; `execTransaction` submission not built |
+| Member approval | Members sign Safe transactions (EIP-712 SafeTx) with passkeys | Built for HQ Safe proposals; store Safe proposals not signable yet |
+| Relayer | A bizzet relayer Safe with Safe4337Module submits signed transactions via ERC-4337 | Interim: the last signer's passkey account submits `execTransaction` (fork-tested); relayer Safe not built |
 | Gas sponsorship | Pimlico paymaster | Built (server proxy in the wallet) |
 | Keeper permission | Zodiac Roles v2 scopes a keeper to JPYC/USDC transfers into the HQ Safe only | Encoding built and fork-tested; keeper not deployed |
 | Proposals | Payout, owner change and Safe setup proposals stored in Postgres | Built (creation, reject, sync) |
-| Receiving settings | Each store's ENSv2 subname holds its receiving address as a text record | In progress |
+| Receiving settings | Each group's ENSv2 name holds its Safe as the `addr` record and its currency as the `bizzet.currency` text record | Built and fork-tested; live setup not run yet |
 
 Group Safes carry no module, so the only way to move their funds is a SafeTx that meets the owner threshold, plus the keeper's narrowly scoped Roles permission. Members sign SafeTx rather than UserOperations because Pimlico's paymaster sponsorship expires 10 minutes after it is issued, which is too short to collect signatures from several members; the relayer wraps the fully signed SafeTx into its own UserOperation at submission time.
 
@@ -152,12 +165,12 @@ We build Safe calldata ourselves in `packages/contracts` (viem/ox) instead of us
 
 - **HQ Safe**：3人以上のパスキーのオーナーとしきい値 2 の Safe（作成まで実装済み）。
 - **店舗 Safe**：HQ Safe を唯一のオーナーとする Safe（作成まで実装済み）。
-- **メンバーの承認**：メンバーはパスキーで Safe トランザクション（EIP-712 の SafeTx）に署名します（ハッシュは実装済み、ウォレットの承認画面は未実装）。
-- **relayer**：Safe4337Module を持つ bizzet の relayer Safe が、署名済みのトランザクションを ERC-4337 で送ります（ガスレスな UserOperation は Sepolia で確認済み、`execTransaction` の送信は未実装）。
+- **メンバーの承認**：メンバーはパスキーで Safe トランザクション（EIP-712 の SafeTx）に署名します（本部の Safe の提案は実装済み、店舗の Safe の提案はまだ署名できない）。
+- **relayer**：Safe4337Module を持つ bizzet の relayer Safe が、署名済みのトランザクションを ERC-4337 で送ります（暫定で最後に署名したメンバーのパスキーのアカウントが `execTransaction` を送り、フォークテストで確認済み。中継用の Safe は未実装）。
 - **ガス代**：Pimlico の paymaster が負担します（実装済み）。
 - **キーパーの権限**：Zodiac Roles v2 で、HQ Safe への JPYC/USDC の送金だけに絞ります（エンコードとフォークテストは実装済み、キーパーは未配置）。
 - **提案**：出金・オーナー変更・Safe 作成の提案を Postgres に保存します（作成・却下・同期は実装済み）。
-- **受け取りの設定**：店舗ごとの ENSv2 のサブネームが、受取アドレスをテキストレコードとして持ちます（実装中）。
+- **受け取りの設定**：グループごとの ENSv2 の名前が、Safe を `addr` のレコード、受取通貨を `bizzet.currency` のテキストレコードとして持ちます（実装済みでフォークテストで確認済み、実際の Sepolia でのセットアップは未実行）。
 
 Pimlico のスポンサーは発行から10分で切れ、複数メンバーの署名を集めるには短すぎるため、メンバーは UserOperation ではなく SafeTx に署名し、relayer が送信時に自分の UserOperation に包みます。
 
@@ -199,6 +212,9 @@ The seeded credentials are for local development only.
 | --- | --- |
 | `PIMLICO_API_KEY` | Pimlico bundler/paymaster key, used server-side only |
 | `PUBLIC_PASSKEY_RP_ID` | Optional WebAuthn rpId override |
+| `DATABASE_URL` | Postgres URL shared with the dashboard |
+| `PUBLIC_SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint |
+| `PUBLIC_PAY_MOCK_RESOLUTION` | Dev server only: `0xaddress,USDC,name` replaces ENS resolution on the payment page, and the page says so |
 
 `apps/dashboard/.env`
 
@@ -212,6 +228,16 @@ The seeded credentials are for local development only.
 | `CRON_SECRET` | Bearer token for `/api/cron/deposits` |
 | `DEPOSITS_START_BLOCK` | Optional first block for the deposit indexer |
 | `PUBLIC_WALLET_URL` | Wallet URL used in invite and add-passkey links |
+| `ENS_OPERATOR_PRIVATE_KEY` | Operator key that registers store subnames and writes ENS records (holds only Sepolia ETH for gas) |
+
+### ENS setup (once)
+
+```sh
+ENS_OPERATOR_PRIVATE_KEY=0x... SEPOLIA_RPC_URL=https://... ENS_HQ_LABEL=bizzet \
+  ENS_HQ_SAFE_ADDRESS=0x... pnpm --filter @bizzet/contracts ens:setup
+```
+
+The script registers `<label>.eth`, deploys the subname registry and resolver, writes the HQ records, and prints the SQL for the `ens_settings` row; run that SQL against the dashboard's database.
 
 ### 日本語
 
@@ -220,10 +246,10 @@ Node.js 20 以上、pnpm 10、Docker が必要です。上のコマンドを順�
 ## Testing
 
 ```sh
-# Sepolia fork tests (5 tests)
+# Sepolia fork tests (13 tests)
 cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnpm test
 
-# vitest from the repo root (dashboard 11, wallet 2)
+# vitest from the repo root (dashboard 11, wallet 21)
 pnpm test
 
 # Dashboard type check
@@ -246,7 +272,7 @@ ETHGlobal asks teams to document where AI tools were used. We used AI heavily, a
 | Claude Code | Writing tests and reviewing changes |
 | Devin (Cognition) | 10 commits by `devin-ai-integration[bot]`, merged as PRs #1–#11 |
 
-Commits that Claude Code co-authored carry a `Co-Authored-By: Claude …` trailer (34 commits at the time of writing). Devin's PRs covered the dashboard shadcn setup, DB connection, login page, docs deploy fix, invite registration, passkey rpId, Better Auth login, docs additions, and zod + superforms validation with vitest.
+Commits that Claude Code co-authored carry a `Co-Authored-By: Claude …` trailer (47 commits at the time of writing). Devin's PRs covered the dashboard shadcn setup, DB connection, login page, docs deploy fix, invite registration, passkey rpId, Better Auth login, docs additions, and zod + superforms validation with vitest.
 
 The human team member set the product direction and requirements, made every design decision, reviewed and approved changes, and ran the manual checks.
 
