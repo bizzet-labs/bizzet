@@ -30,16 +30,17 @@ export async function callApi<T>(
   return (await response.json()) as T
 }
 
-// SafeTx のハッシュを、そのままチャレンジとしてパスキーに署名させる。
-// Safe はパスキーの署名者に isValidSignature(safeTxHash, 署名) を尋ね、署名者はこのハッシュをチャレンジとして検証する
+// サーバーが示した署名するハッシュを、そのままチャレンジとしてパスキーに署名させる。
+// 本部の Safe の提案では SafeTx のハッシュ、店舗の Safe の提案では本部の Safe の SafeMessage のハッシュで、
+// Safe はパスキーの署名者にこのハッシュの元のバイト列で isValidSignature を尋ね、署名者はハッシュをチャレンジとして検証する
 export async function signApproval(
   passkey: StoredPasskey,
   id: string,
-  safeTxHash: Hex.Hex,
+  signingHash: Hex.Hex,
 ) {
   const { metadata, signature } = await WebAuthnP256.sign({
     credentialId: passkey.id,
-    challenge: safeTxHash,
+    challenge: signingHash,
     rpId: RP_ID,
   })
   return callApi<{ signatureCount: number; threshold: number }>(

@@ -62,8 +62,11 @@ export {
   encodeErc20Transfer,
   encodeExecTransaction,
   encodeRemoveOwner,
+  encodeSafeTransactionData,
   erc20Abi,
   findToken,
+  hashNestedSafeTransaction,
+  hashSafeMessage,
   hashSafeTransaction,
   type SafeTransactionData,
   SENTINEL_OWNERS,
@@ -103,6 +106,7 @@ export {
   v4QuoterAbi,
 } from './uniswap.ts'
 export {
+  encodeNestedSafeSignature,
   encodePasskeySignature,
   encodeSafeSignatures,
   hashSafeOperation,

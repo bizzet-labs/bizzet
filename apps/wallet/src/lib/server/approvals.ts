@@ -5,9 +5,11 @@ import {
   encodeCreateSafe,
   encodeCreateSigner,
   encodeExecTransaction,
+  encodeNestedSafeSignature,
   encodePasskeySignature,
   encodeSafeSignatures,
   findToken,
+  hashNestedSafeTransaction,
   hashSafeTransaction,
   type PasskeySignature,
   predictSafeAddress,
@@ -52,7 +54,6 @@ type SafeTransaction = typeof safeTransactions.$inferSelect
 
 // 署名できない理由。画面にそのまま出す
 export type Unsignable =
-  | 'store_safe'
   | 'not_owner'
   | 'already_signed'
   | 'ready'
@@ -71,6 +72,11 @@ export type ApprovalItem = {
   data: string
   nonce: number
   safeTxHash: string
+  // メンバーがパスキーで署名するハッシュ。本部の Safe の提案なら safeTxHash、店舗の Safe の提案なら
+  // 本部の Safe をドメインにした SafeMessage のハッシュ（hashNestedSafeTransaction）
+  signingHash: string
+  // 店舗の Safe の提案。本部の Safe として（入れ子の ERC-1271 で）承認する
+  nested: boolean
   createdAt: string
   signatureCount: number
   threshold: number | null
@@ -109,20 +115,32 @@ function findHeadquarters(visible: Group[]) {
   return visible.find((g) => g.kind === 'headquarters' && g.safeAddress)
 }
 
-// 仮置き：店舗の Safe のオーナーは本部の Safe のため、店舗の取引には本部の Safe のコントラクト署名
-//（本部のオーナーが SafeMessage に署名する入れ子の ERC-1271）が要る。これを組み立てる処理を作るまでは、
-// ウォレットで署名できるのは本部の Safe の取引だけにする
+function isHeadquartersSafe(tx: SafeTransaction, hq: Group) {
+  return (
+    !!hq.safeAddress &&
+    tx.safeAddress.toLowerCase() === hq.safeAddress.toLowerCase()
+  )
+}
+
+// メンバーが署名するハッシュ。店舗の Safe のオーナーは本部の Safe のため、店舗の取引には本部の Safe の
+// コントラクト署名が要り、本部のオーナーは本部の Safe の SafeMessage（中身は店舗の SafeTx）に署名する
+export function signingHashOf(tx: SafeTransaction, hq: Group): Hex {
+  if (isHeadquartersSafe(tx, hq)) return tx.safeTxHash as Hex
+  return hashNestedSafeTransaction(
+    getAddress(hq.safeAddress as string),
+    getAddress(tx.safeAddress),
+    toSafeTransactionData(tx),
+  )
+}
+
+// 本部の Safe の提案も店舗の Safe の提案も、署名するのは本部の Safe のオーナーで、しきい値は本部の Safe のもの
 export function whyUnsignable(
-  tx: SafeTransaction,
   hq: Group | undefined,
   signer: string,
   signedByMe: boolean,
   signatureCount: number,
 ): Unsignable | null {
   if (!hq?.safeAddress) return 'no_headquarters'
-  if (tx.safeAddress.toLowerCase() !== hq.safeAddress.toLowerCase()) {
-    return 'store_safe'
-  }
   if (signedByMe) return 'already_signed'
   if (hq.safeThreshold !== null && signatureCount >= hq.safeThreshold) {
     return 'ready'
@@ -164,7 +182,6 @@ export async function listApprovals(
       const token = tx.token ? findToken(tx.token) : undefined
       const threshold = hq?.safeThreshold ?? null
       const unsignable = whyUnsignable(
-        tx,
         hq,
         passkey.signer,
         signedByMe,
@@ -185,6 +202,8 @@ export async function listApprovals(
         data: tx.data,
         nonce: tx.nonce,
         safeTxHash: tx.safeTxHash,
+        signingHash: hq?.safeAddress ? signingHashOf(tx, hq) : tx.safeTxHash,
+        nested: hq ? !isHeadquartersSafe(tx, hq) : false,
         createdAt: tx.createdAt.toISOString(),
         signatureCount,
         threshold,
@@ -193,14 +212,15 @@ export async function listApprovals(
         executable:
           threshold !== null &&
           signatureCount >= threshold &&
-          unsignable !== 'store_safe' &&
           unsignable !== 'no_headquarters',
       }
     })
 }
 
-// 署名の対象になる、本部の Safe の送信前の提案。SafeTx のハッシュは保存した値を信用せず、中身から計算し直す
-async function loadHeadquartersProposal(db: Db, own: Group, id: string) {
+// 署名の対象になる送信前の提案。SafeTx のハッシュは保存した値を信用せず、中身から計算し直す。
+// 店舗の Safe の提案は、その店舗の Safe のオーナーが本部の Safe だけ（しきい値 1）であることも確かめ、
+// メンバーが署名するハッシュを本部の Safe の SafeMessage のハッシュにする
+async function loadProposal(db: Db, own: Group, id: string) {
   const tx = await db.query.safeTransactions.findFirst({
     where: eq(safeTransactions.id, id),
   })
@@ -211,21 +231,51 @@ async function loadHeadquartersProposal(db: Db, own: Group, id: string) {
   if (!hq?.safeAddress || hq.safeThreshold === null) {
     error(409, '本部の Safe が設定されていません')
   }
-  if (tx.safeAddress.toLowerCase() !== hq.safeAddress.toLowerCase()) {
-    error(409, '店舗の Safe の提案には、まだウォレットで署名できません')
+  const hqSafe = getAddress(hq.safeAddress)
+  const safe = getAddress(tx.safeAddress)
+  let store: Group | undefined
+  if (!isAddressEqual(safe, hqSafe)) {
+    store = visible.find(
+      (g) =>
+        g.id === tx.groupId &&
+        g.kind === 'store' &&
+        !!g.safeAddress &&
+        isAddressEqual(getAddress(g.safeAddress), safe),
+    )
+    if (!store) error(409, '提案の Safe が店舗の Safe と一致しません')
+    if (
+      store.safeThreshold !== 1 ||
+      store.safeOwners?.length !== 1 ||
+      !isOwner(store, hqSafe)
+    ) {
+      error(409, '店舗の Safe のオーナーが本部の Safe だけになっていません')
+    }
   }
-  const safe = getAddress(hq.safeAddress)
   const data = toSafeTransactionData(tx)
-  const hash = hashSafeTransaction(safe, data)
-  if (hash.toLowerCase() !== tx.safeTxHash.toLowerCase()) {
+  const safeTxHash = hashSafeTransaction(safe, data)
+  if (safeTxHash.toLowerCase() !== tx.safeTxHash.toLowerCase()) {
     error(409, '提案の取引のハッシュが中身と一致しません')
   }
-  return { tx, hq, safe, data, hash, threshold: hq.safeThreshold }
+  const hash = store
+    ? hashNestedSafeTransaction(hqSafe, safe, data)
+    : safeTxHash
+  return {
+    tx,
+    hq,
+    hqSafe,
+    store,
+    safe,
+    data,
+    hash,
+    threshold: hq.safeThreshold,
+  }
 }
 
 // パスキーの署名を確かめて保存する。署名の検証は、Safe が execTransaction のときに呼ぶのと同じ
 // 署名者のファクトリの処理を eth_call で呼び、保存した公開鍵に対して行う。
-// 端末が送った公開鍵や署名者のアドレスは使わない
+// 端末が送った公開鍵や署名者のアドレスは使わない。
+// 店舗の Safe の提案でも保存先は safe_transaction_signatures で、signature は店舗の safe_tx_hash ではなく
+// 本部の Safe の SafeMessage のハッシュへの署名になる（どちらのハッシュかは提案の Safe から決まる）
 export async function addSignature(
   db: Db,
   member: Member,
@@ -237,11 +287,7 @@ export async function addSignature(
   if (!isHeadquartersSigner(member, own)) {
     error(403, '本部の Owner と Approver だけが署名できます')
   }
-  const { tx, hq, hash, threshold } = await loadHeadquartersProposal(
-    db,
-    own,
-    id,
-  )
+  const { tx, hq, hash, threshold } = await loadProposal(db, own, id)
   const { x, y } = coordinates(passkey.publicKey)
   const signer = await publicClient.readContract({
     address: addresses.passkey.signerFactory,
@@ -296,7 +342,59 @@ async function hasCode(address: Address) {
 
 export type ExecutionCall = { to: Address; data: Hex }
 
-// 署名のそろった提案を実行する呼び出しの並び。本部の Safe と署名者が未配置なら、同じ取引の中で先に配置する。
+// グループの Safe が未配置なら、保存した作成時の設定から配置する呼び出しを返す。
+// 設定から再現したアドレスが保存したアドレスと食い違うなら、別の Safe を作らないよう止める
+async function deploySafeCall(
+  group: Group,
+  label: string,
+): Promise<ExecutionCall | null> {
+  const safe = getAddress(group.safeAddress as string)
+  if (await hasCode(safe)) return null
+  if (!group.safeOwners || !group.safeSaltNonce || !group.safeThreshold) {
+    error(409, `${label}の Safe の作成時の設定がありません`)
+  }
+  const setup = {
+    owners: group.safeOwners.map((o) => getAddress(o)),
+    threshold: BigInt(group.safeThreshold),
+    kind: 'group' as const,
+  }
+  const saltNonce = BigInt(group.safeSaltNonce)
+  const proxyCreationCode = await publicClient.readContract({
+    address: addresses.safe.proxyFactory,
+    abi: proxyFactoryAbi,
+    functionName: 'proxyCreationCode',
+  })
+  if (
+    !isAddressEqual(
+      predictSafeAddress(setup, saltNonce, proxyCreationCode),
+      safe,
+    )
+  ) {
+    error(409, `${label}の Safe の設定からアドレスを再現できません`)
+  }
+  return {
+    to: addresses.safe.proxyFactory,
+    data: encodeCreateSafe(setup, saltNonce),
+  }
+}
+
+// 実行する Safe のノンスが提案のノンスと一致することを確かめる。未配置の Safe のノンスは 0 とみなす
+async function assertNextNonce(safe: Address, nonce: bigint) {
+  const current = (await hasCode(safe))
+    ? await publicClient.readContract({
+        address: safe,
+        abi: safeOwnerAbi,
+        functionName: 'nonce',
+      })
+    : 0n
+  if (current !== nonce) {
+    error(409, 'この提案より前のノンスの提案が、まだ実行されていません')
+  }
+}
+
+// 署名のそろった提案を実行する呼び出しの並び。Safe と署名者が未配置なら、同じ取引の中で先に配置する。
+// 店舗の Safe の提案は、本部のオーナーの署名の並びを本部の Safe のコントラクト署名に包んで店舗の Safe に渡す。
+// このとき本部の Safe も配置済みである必要があり、未配置なら同じ取引の中で先に配置する。
 // 仮置き：中継用アカウントを作るまでは、この並びを最後に署名したメンバーのパスキーの ERC-4337 アカウントから送る
 export async function buildExecution(
   db: Db,
@@ -307,7 +405,7 @@ export async function buildExecution(
   if (!isHeadquartersSigner(member, own)) {
     error(403, '本部の Owner と Approver だけが実行できます')
   }
-  const { tx, hq, safe, data, threshold } = await loadHeadquartersProposal(
+  const { tx, hq, hqSafe, store, safe, data, threshold } = await loadProposal(
     db,
     own,
     id,
@@ -322,54 +420,20 @@ export async function buildExecution(
     .innerJoin(members, eq(members.id, safeTransactionSignatures.memberId))
     .innerJoin(passkeys, eq(passkeys.id, members.passkeyId))
     .where(eq(safeTransactionSignatures.transactionId, tx.id))
-  // 今もオーナーである署名者の署名だけを、Safe が求めるアドレスの昇順で、しきい値の数だけ使う
+  // 今も本部の Safe のオーナーである署名者の署名だけを、Safe が求めるアドレスの昇順で、しきい値の数だけ使う
   const usable = rows
     .filter((r) => isOwner(hq, r.signer))
     .sort((a, b) => (a.signer.toLowerCase() < b.signer.toLowerCase() ? -1 : 1))
     .slice(0, threshold)
   if (usable.length < threshold) error(409, '署名がまだそろっていません')
 
+  await assertNextNonce(safe, data.nonce)
   const calls: ExecutionCall[] = []
-  const deployed = await hasCode(safe)
-  if (deployed) {
-    const nonce = await publicClient.readContract({
-      address: safe,
-      abi: safeOwnerAbi,
-      functionName: 'nonce',
-    })
-    if (nonce !== data.nonce) {
-      error(409, 'この提案より前のノンスの提案が、まだ実行されていません')
-    }
-  } else {
-    if (data.nonce !== 0n) {
-      error(409, 'この提案より前のノンスの提案が、まだ実行されていません')
-    }
-    if (!hq.safeOwners || !hq.safeSaltNonce) {
-      error(409, '本部の Safe の作成時の設定がありません')
-    }
-    const setup = {
-      owners: hq.safeOwners.map((o) => getAddress(o)),
-      threshold: BigInt(threshold),
-      kind: 'group' as const,
-    }
-    const saltNonce = BigInt(hq.safeSaltNonce)
-    const proxyCreationCode = await publicClient.readContract({
-      address: addresses.safe.proxyFactory,
-      abi: proxyFactoryAbi,
-      functionName: 'proxyCreationCode',
-    })
-    if (
-      !isAddressEqual(
-        predictSafeAddress(setup, saltNonce, proxyCreationCode),
-        safe,
-      )
-    ) {
-      error(409, '本部の Safe の設定からアドレスを再現できません')
-    }
-    calls.push({
-      to: addresses.safe.proxyFactory,
-      data: encodeCreateSafe(setup, saltNonce),
-    })
+  const deployHq = await deploySafeCall(hq, '本部')
+  if (deployHq) calls.push(deployHq)
+  if (store) {
+    const deployStore = await deploySafeCall(store, '店舗')
+    if (deployStore) calls.push(deployStore)
   }
   for (const r of usable) {
     if (!(await hasCode(getAddress(r.signer)))) {
@@ -379,16 +443,17 @@ export async function buildExecution(
       })
     }
   }
+  const hqSignatures = encodeSafeSignatures(
+    usable.map((r) => ({
+      signer: getAddress(r.signer),
+      data: r.signature as Hex,
+    })),
+  )
   calls.push({
     to: safe,
     data: encodeExecTransaction(
       data,
-      encodeSafeSignatures(
-        usable.map((r) => ({
-          signer: getAddress(r.signer),
-          data: r.signature as Hex,
-        })),
-      ),
+      store ? encodeNestedSafeSignature(hqSafe, hqSignatures) : hqSignatures,
     ),
   })
   return calls
@@ -468,5 +533,21 @@ export async function confirmExecution(
   }
   if (Object.keys(update).length > 0) {
     await db.update(groups).set(update).where(eq(groups.id, group.id))
+  }
+  // 店舗の Safe の提案では、本部の Safe も同じ取引の中で配置することがある
+  if (group.kind === 'store') {
+    const hq = await db.query.groups.findFirst({
+      where: eq(groups.kind, 'headquarters'),
+    })
+    if (
+      hq?.safeAddress &&
+      !hq.safeDeployedAt &&
+      (await hasCode(getAddress(hq.safeAddress)))
+    ) {
+      await db
+        .update(groups)
+        .set({ safeDeployedAt: executedAt })
+        .where(eq(groups.id, hq.id))
+    }
   }
 }
