@@ -3,7 +3,11 @@ import { describe, it } from 'node:test'
 import { network } from 'hardhat'
 import { type Address, decodeEventLog, getAddress, parseAbi } from 'viem'
 import { sepolia } from '../src/addresses/sepolia.ts'
-import { encodeCreateSafe, proxyFactoryAbi } from '../src/safe.ts'
+import {
+  encodeCreateSafe,
+  predictSafeAddress,
+  proxyFactoryAbi,
+} from '../src/safe.ts'
 
 // SEPOLIA_RPC_URL が必要。`pnpm hardhat keystore set SEPOLIA_RPC_URL` か環境変数で渡す
 describe('Sepolia fork', async () => {
@@ -28,9 +32,10 @@ describe('Sepolia fork', async () => {
 
   it('Safe4337Module を有効にした Safe を作れる', async () => {
     const owners = [deployer.account.address]
+    const saltNonce = BigInt(Date.now())
     const hash = await deployer.sendTransaction({
       to: sepolia.safe.proxyFactory,
-      data: encodeCreateSafe({ owners, threshold: 1n }, BigInt(Date.now())),
+      data: encodeCreateSafe({ owners, threshold: 1n }, saltNonce),
     })
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
     const log = receipt.logs.find(
@@ -43,6 +48,20 @@ describe('Sepolia fork', async () => {
       eventName: 'ProxyCreation',
       ...log,
     })
+
+    const proxyCreationCode = await publicClient.readContract({
+      address: sepolia.safe.proxyFactory,
+      abi: proxyFactoryAbi,
+      functionName: 'proxyCreationCode',
+    })
+    assert.equal(
+      predictSafeAddress(
+        { owners, threshold: 1n },
+        saltNonce,
+        proxyCreationCode,
+      ),
+      getAddress(args.proxy),
+    )
 
     const safeAbi = parseAbi([
       'function getOwners() view returns (address[])',

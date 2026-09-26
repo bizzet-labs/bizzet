@@ -10,6 +10,7 @@ export const sepolia = {
     singletonL2: '0x29fcB43b46531BcA003ddC8FCB67FFE91900C762',
     proxyFactory: '0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67',
     fallbackHandler: '0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99',
+    multiSend: '0x38869bf66a61cF6bDB996A6aE40D5853Fd43B526',
     multiSendCallOnly: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
   },
 

@@ -40,6 +40,19 @@ importers:
         version: 8.3.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)
 
   apps/wallet:
+    dependencies:
+      '@bizzet/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      ox:
+        specifier: ^0.14.45
+        version: 0.14.45(typescript@6.0.3)(zod@3.25.76)
+      permissionless:
+        specifier: ^0.4.1
+        version: 0.4.1(ox@0.14.45(typescript@6.0.3)(zod@3.25.76))(viem@2.56.9(typescript@6.0.3)(zod@3.25.76))
+      viem:
+        specifier: ^2.56.9
+        version: 2.56.9(typescript@6.0.3)(zod@3.25.76)
     devDependencies:
       '@lucide/svelte':
         specifier: ^1.48.0
@@ -126,6 +139,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      ox:
+        specifier: ^0.14.45
+        version: 0.14.45(typescript@6.0.3)(zod@3.25.76)
       viem:
         specifier: ^2.56.9
         version: 2.56.9(typescript@6.0.3)(zod@3.25.76)
@@ -5349,6 +5365,15 @@ packages:
   path-type@4.0.0:
     resolution: {integrity: sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==}
     engines: {node: '>=8'}
+
+  permissionless@0.4.1:
+    resolution: {integrity: sha512-RhSLhA3Aw3gc1il6unWYfo1K+GBQNGBMSEVwv2gJQN6Ryxv6VoYtutRyIIQ279bPHu6WlRutbw/IxRC8giNamQ==}
+    peerDependencies:
+      ox: ^0.11.3
+      viem: ^2.44.4
+    peerDependenciesMeta:
+      ox:
+        optional: true
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -13639,6 +13664,12 @@ snapshots:
   path-to-regexp@3.3.0: {}
 
   path-type@4.0.0: {}
+
+  permissionless@0.4.1(ox@0.14.45(typescript@6.0.3)(zod@3.25.76))(viem@2.56.9(typescript@6.0.3)(zod@3.25.76)):
+    dependencies:
+      viem: 2.56.9(typescript@6.0.3)(zod@3.25.76)
+    optionalDependencies:
+      ox: 0.14.45(typescript@6.0.3)(zod@3.25.76)
 
   picocolors@1.1.1: {}
 
