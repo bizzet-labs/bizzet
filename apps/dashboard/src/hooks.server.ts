@@ -7,9 +7,9 @@ import { paraglideMiddleware } from '$lib/paraglide/server'
 import { getAuth, getSessionMember } from '$lib/server/auth'
 import { db } from '$lib/server/db'
 
-// ログインなしで開ける画面
+// ログインなしで開ける画面。/api/cron/ は定期実行（Vercel Cron）の入口で、Bearer トークンで守る
 const PUBLIC_PATHS = new Set(['/login'])
-const PUBLIC_PREFIXES = ['/invite/', '/api/auth/']
+const PUBLIC_PREFIXES = ['/invite/', '/api/auth/', '/api/cron/']
 
 // 表示言語を決め、html の lang 属性に入れる
 const i18nHandle: Handle = ({ event, resolve }) =>
