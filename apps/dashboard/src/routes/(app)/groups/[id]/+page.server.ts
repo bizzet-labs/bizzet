@@ -89,7 +89,7 @@ async function loadBalances(safeAddress: string) {
 }
 
 // 配置済みの記録があればそれを信じ、なければチェーンのコードの有無で確かめる。
-// 中継用アカウントが配置しても記録の更新が遅れる場合があるため
+// 設定画面を開く前に配置された場合など、記録がまだ付いていないことがあるため
 async function loadDeployed(
   safeAddress: `0x${string}`,
   recorded: boolean,
