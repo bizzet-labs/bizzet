@@ -29,6 +29,7 @@
     "vite": "^8.0.16"
   },
   "dependencies": {
-    "@bizzet/db": "workspace:*"
+    "@bizzet/db": "workspace:*",
+    "ox": "^0.14.45"
   }
 }

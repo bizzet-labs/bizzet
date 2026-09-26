@@ -8,6 +8,13 @@
       "when": 1790411851063,
       "tag": "0000_lumpy_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790415405794,
+      "tag": "0001_rich_bloodaxe",
+      "breakpoints": true
     }
   ]
 }

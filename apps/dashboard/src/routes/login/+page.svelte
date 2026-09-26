@@ -1,6 +1,8 @@
 <script lang="ts">
 import GalleryVerticalEndIcon from '@lucide/svelte/icons/gallery-vertical-end'
 import LoginForm from '@/components/login-form.svelte'
+
+let { data, form } = $props()
 </script>
 
 <div class="grid min-h-svh lg:grid-cols-2">
@@ -17,7 +19,7 @@ import LoginForm from '@/components/login-form.svelte'
 		</div>
 		<div class="flex flex-1 items-center justify-center">
 			<div class="w-full max-w-xs">
-				<LoginForm />
+				<LoginForm challenge={data.challenge} message={form?.message} />
 			</div>
 		</div>
 	</div>
