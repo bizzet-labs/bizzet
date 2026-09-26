@@ -6,6 +6,7 @@ import {
   type RowData,
 } from '@tanstack/svelte-table'
 import * as Table from '@/components/ui/table/index.js'
+import { goto } from '$app/navigation'
 import { m } from '$lib/paraglide/messages.js'
 import { type DataTableFeatures, features } from './data-table-features.js'
 
@@ -13,13 +14,26 @@ type DataTableProps<TData extends RowData> = {
   columns: ColumnDef<DataTableFeatures, TData>[]
   data: TData[]
   emptyMessage?: string
+  // 指定すると、行のどこを押してもその行の詳細へ移れる
+  rowHref?: (row: TData) => string
 }
 
 let {
   data,
   columns,
   emptyMessage = m.common_no_data(),
+  rowHref,
 }: DataTableProps<TData> = $props()
+
+// 行の中のリンクやボタンを押したときは、その操作を優先して行の移動はしない
+function handleRowClick(event: MouseEvent, row: TData) {
+  if (!rowHref) return
+  if (
+    (event.target as HTMLElement).closest('a, button, input, select, textarea')
+  )
+    return
+  goto(rowHref(row))
+}
 
 const table = createTable({
   features,
@@ -48,7 +62,10 @@ const table = createTable({
 	</Table.Header>
 	<Table.Body>
 		{#each table.getRowModel().rows as row (row.id)}
-			<Table.Row>
+			<Table.Row
+				class={rowHref ? 'cursor-pointer' : undefined}
+				onclick={rowHref ? (event) => handleRowClick(event, row.original) : undefined}
+			>
 				{#each row.getAllCells() as cell (cell.id)}
 					<Table.Cell>
 						<FlexRender {cell} />
