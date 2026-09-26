@@ -1,0 +1,77 @@
+.figure {
+  margin: 2rem 0;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  min-width: 720px;
+  height: auto;
+  font-size: 12px;
+}
+
+.lane {
+  fill: var(--ifm-color-emphasis-100);
+  stroke: var(--ifm-color-emphasis-200);
+}
+
+.laneLabel {
+  fill: var(--ifm-color-emphasis-700);
+  font-size: 12px;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.box,
+.boxStrong {
+  fill: var(--ifm-background-surface-color);
+  stroke: var(--ifm-color-emphasis-400);
+}
+
+.boxStrong {
+  stroke: var(--ifm-color-primary);
+  stroke-width: 2;
+}
+
+.boxTitle,
+.boxTitleStrong {
+  fill: var(--ifm-color-emphasis-900);
+  font-size: 13px;
+  font-weight: var(--ifm-font-weight-bold);
+  text-anchor: middle;
+}
+
+.boxTitleStrong {
+  fill: var(--ifm-color-primary);
+}
+
+.boxLine {
+  fill: var(--ifm-color-emphasis-800);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.edge,
+.edgeDashed {
+  fill: none;
+  stroke: var(--ifm-color-primary);
+  stroke-width: 1.8;
+}
+
+.edgeDashed {
+  stroke: var(--ifm-color-emphasis-500);
+  stroke-dasharray: 5 4;
+}
+
+.arrowHead {
+  fill: var(--ifm-color-primary);
+}
+
+.edgeLabel {
+  fill: var(--ifm-color-primary);
+  font-size: 11px;
+  font-weight: var(--ifm-font-weight-bold);
+}
