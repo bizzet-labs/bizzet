@@ -10,21 +10,17 @@ import {
   isEnsOperatorConfigured,
   isReceivingCurrency,
   resolveGroupEns,
-  type SyncEnsResult,
   syncGroupEns,
   trySyncGroupEns,
 } from '$lib/server/ens'
 import {
   getKeeperAddress,
   getRolesStatus,
-  type ProposeRolesResult,
   proposeRolesSetup,
 } from '$lib/server/group-roles'
 import {
-  type ConfigureResult,
   configureHeadquartersSafe,
   configureStoreSafe,
-  type DeploySafeResult,
   deployGroupSafe,
   getHeadquartersCandidates,
   HEADQUARTERS_MIN_OWNERS,
@@ -36,6 +32,12 @@ import { isOperatorConfigured } from '$lib/server/operator'
 import { getHeadquarters } from '$lib/server/safe'
 import { isHeadquartersMember } from '$lib/server/visibility'
 import type { Actions, PageServerLoad } from './$types'
+import {
+  configureMessage,
+  deployMessage,
+  ensMessage,
+  proposeMessage,
+} from './reason-messages'
 
 // 設定画面は Owner だけが開ける。見られないグループは存在も分からないよう 404 にする
 async function loadGroup(locals: App.Locals, id: string) {
@@ -157,66 +159,6 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         createdAt: roles.proposal.createdAt.toISOString(),
       },
     },
-  }
-}
-
-function configureMessage(
-  reason: Extract<ConfigureResult, { ok: false }>['reason'],
-) {
-  switch (reason) {
-    case 'already_configured':
-      return m.groups_error_already_configured()
-    case 'headquarters_unconfigured':
-      return m.groups_error_hq_unconfigured()
-    case 'not_enough_owners':
-      return m.groups_error_not_enough_owners({ min: HEADQUARTERS_MIN_OWNERS })
-    case 'invalid_owner':
-      return m.groups_error_invalid_owner()
-  }
-}
-
-function proposeMessage(
-  reason: Extract<ProposeRolesResult, { ok: false }>['reason'],
-) {
-  switch (reason) {
-    case 'not_store':
-      return m.groups_error_not_store()
-    case 'store_unconfigured':
-      return m.groups_error_store_unconfigured()
-    case 'headquarters_unconfigured':
-      return m.groups_error_hq_unconfigured()
-    case 'keeper_unset':
-      return m.groups_error_keeper_unset()
-    case 'already_proposed':
-      return m.groups_error_roles_proposed()
-  }
-}
-
-function deployMessage(
-  reason: Extract<DeploySafeResult, { ok: false }>['reason'],
-) {
-  switch (reason) {
-    case 'unconfigured':
-      return m.groups_safe_deploy_error_unconfigured()
-    case 'already_deployed':
-      return m.groups_safe_deploy_error_already()
-    case 'operator_unset':
-      return m.groups_safe_deploy_error_operator()
-    case 'address_mismatch':
-      return m.groups_safe_deploy_error_mismatch()
-    case 'failed':
-      return m.groups_safe_deploy_error_failed()
-  }
-}
-
-function ensMessage(reason: Extract<SyncEnsResult, { ok: false }>['reason']) {
-  switch (reason) {
-    case 'not_configured':
-      return m.groups_ens_error_not_configured()
-    case 'no_label':
-      return m.groups_ens_error_no_label()
-    case 'failed':
-      return m.groups_ens_error_failed()
   }
 }
 
