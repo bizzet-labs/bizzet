@@ -1,6 +1,14 @@
 export { sepolia } from './addresses/sepolia.ts'
 export { createSepoliaPublicClient, DEFAULT_SEPOLIA_RPC_URL } from './chain.ts'
 export {
+  CURRENCY_TEXT_KEY,
+  ensV2,
+  isValidLabel,
+  type ReceivingCurrency,
+  type ResolvedGroupName,
+  resolveGroupName,
+} from './ens.ts'
+export {
   encodeCreateSigner,
   type PasskeyPublicKey,
   signerFactoryAbi,
