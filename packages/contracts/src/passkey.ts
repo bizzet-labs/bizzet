@@ -5,7 +5,11 @@ import { sepolia } from './addresses/sepolia.ts'
 const signerFactoryAbi = parseAbi([
   'function createSigner(uint256 x, uint256 y, uint176 verifiers) returns (address signer)',
   'function getSigner(uint256 x, uint256 y, uint176 verifiers) view returns (address signer)',
+  'function isValidSignatureForSigner(bytes32 message, bytes signature, uint256 x, uint256 y, uint176 verifiers) view returns (bytes4 magicValue)',
 ])
+
+// ERC-1271 の isValidSignature(bytes32,bytes) が、署名が正しいときに返す値
+export const EIP1271_MAGIC_VALUE = '0x1626ba7e'
 
 // P256.Verifiers の詰め方：上位 16 ビットにプリコンパイル、下位 160 ビットに代替の検証コントラクト
 export const verifiers =
