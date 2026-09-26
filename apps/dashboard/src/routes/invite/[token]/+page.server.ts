@@ -1,18 +1,23 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, groups, invitations, isNull, members } from '@bizzet/db'
-import { error, fail, redirect } from '@sveltejs/kit'
+import { error, fail } from '@sveltejs/kit'
 import { APIError } from 'better-auth'
 import { m } from '$lib/paraglide/messages.js'
 import { getAuth, normalizeEmail, PASSWORD_MIN_LENGTH } from '$lib/server/auth'
 import type { Actions, PageServerLoad } from './$types'
 
 // ダッシュボードで開ける招待。パスキーの追加用リンクはウォレットで開く
-async function findOpenInvitation(db: App.Locals['db'], token: string) {
+async function findInvitation(db: App.Locals['db'], token: string) {
   const invitation = await db.query.invitations.findFirst({
     where: eq(invitations.token, token),
   })
   if (!invitation) error(404, m.auth_invite_not_found())
   if (invitation.kind === 'add_passkey') error(400, m.auth_invite_for_wallet())
+  return invitation
+}
+
+async function findOpenInvitation(db: App.Locals['db'], token: string) {
+  const invitation = await findInvitation(db, token)
   if (invitation.usedAt) error(410, m.auth_invite_used())
   if (invitation.expiresAt.getTime() < Date.now()) {
     error(410, m.auth_invite_expired())
@@ -21,12 +26,22 @@ async function findOpenInvitation(db: App.Locals['db'], token: string) {
 }
 
 export const load: PageServerLoad = async ({ locals, params }) => {
+  // 使用済みの招待は、登録を終えたあとに開き直した場合が多いため、エラーではなく完了の画面を出す
+  const found = await findInvitation(locals.db, params.token)
+  if (found.usedAt) {
+    return {
+      pageTitle: m.auth_invite_title(),
+      completed: true as const,
+      kind: found.kind,
+    }
+  }
   const invitation = await findOpenInvitation(locals.db, params.token)
   const group = await locals.db.query.groups.findFirst({
     where: eq(groups.id, invitation.groupId),
   })
   return {
     pageTitle: m.auth_invite_title(),
+    completed: false as const,
     kind: invitation.kind,
     email: invitation.email,
     role: invitation.role,
@@ -109,6 +124,7 @@ export const actions: Actions = {
       })
     }
 
-    redirect(303, '/')
+    // リダイレクトせずに同じ画面で完了を伝える。セッションの Cookie は発行済み
+    return { completed: true }
   },
 }

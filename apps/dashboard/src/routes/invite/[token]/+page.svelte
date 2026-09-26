@@ -1,4 +1,5 @@
 <script lang="ts">
+import CircleCheckIcon from '@lucide/svelte/icons/circle-check'
 import { Button } from '@/components/ui/button/index.js'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field/index.js'
 import { Input } from '@/components/ui/input/index.js'
@@ -8,6 +9,10 @@ import { m } from '$lib/paraglide/messages.js'
 let { data, form } = $props()
 
 let pending = $state(false)
+
+// 登録した直後はログイン済み、使用済みの招待を開き直したときはログインが要る
+const justCompleted = $derived(form?.completed === true)
+const completed = $derived(justCompleted || data.completed)
 
 const ROLE_LABELS = {
   owner: m.common_role_owner,
@@ -21,6 +26,22 @@ const ROLE_LABELS = {
 </svelte:head>
 
 <main class="mx-auto flex max-w-md flex-col gap-6 p-6 md:p-10">
+	{#if completed}
+		<div class="flex flex-col items-center gap-3 text-center">
+			<CircleCheckIcon class="text-primary size-12" />
+			<h1 class="text-2xl font-bold">
+				{justCompleted ? m.auth_invite_completed_heading() : m.auth_invite_already_completed_heading()}
+			</h1>
+			<p class="text-muted-foreground text-sm">
+				{justCompleted
+					? m.auth_invite_completed_description()
+					: m.auth_invite_already_completed_description()}
+			</p>
+			<Button href={justCompleted ? '/' : '/login'} size="lg" class="mt-2 h-10 w-full">
+				{justCompleted ? m.auth_invite_open_dashboard() : m.auth_invite_go_login()}
+			</Button>
+		</div>
+	{:else if !data.completed}
 	<div class="flex flex-col gap-1">
 		{#if data.kind === 'add_password'}
 			<h1 class="text-2xl font-bold">{m.auth_add_password_heading()}</h1>
@@ -42,7 +63,7 @@ const ROLE_LABELS = {
 		use:enhance={() => {
 			pending = true
 			return async ({ result, update }) => {
-				if (result.type !== 'redirect') pending = false
+				pending = false
 				await update()
 			}
 		}}
@@ -88,4 +109,5 @@ const ROLE_LABELS = {
 			</Field>
 		</FieldGroup>
 	</form>
+	{/if}
 </main>

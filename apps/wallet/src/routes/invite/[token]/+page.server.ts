@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, invitations, isNull, members, passkeys } from '@bizzet/db'
-import { error, fail, redirect } from '@sveltejs/kit'
+import { error, fail } from '@sveltejs/kit'
 import type { Actions, PageServerLoad } from './$types'
 
 const HEX_64_BYTES = /^0x[0-9a-fA-F]{128}$/
@@ -9,11 +9,16 @@ const ADDRESS = /^0x[0-9a-fA-F]{40}$/
 type Db = App.Locals['db']
 type Invitation = typeof invitations.$inferSelect
 
-async function findOpenInvitation(db: Db, token: string) {
+async function findInvitation(db: Db, token: string) {
   const invitation = await db.query.invitations.findFirst({
     where: eq(invitations.token, token),
   })
   if (!invitation) error(404, '招待が見つかりません')
+  return invitation
+}
+
+async function findOpenInvitation(db: Db, token: string) {
+  const invitation = await findInvitation(db, token)
   if (invitation.usedAt) error(410, 'この招待は既に使われています')
   if (invitation.expiresAt.getTime() < Date.now()) {
     error(410, 'この招待は期限が切れています')
@@ -34,6 +39,9 @@ async function findPasskeyTarget(db: Db, invitation: Invitation) {
 }
 
 export const load: PageServerLoad = async ({ locals, params }) => {
+  // 使用済みの招待は、登録を終えたあとに開き直した場合が多いため、エラーではなく完了の画面を出す
+  const found = await findInvitation(locals.db, params.token)
+  if (found.usedAt) return { completed: true as const, kind: found.kind }
   const invitation = await findOpenInvitation(locals.db, params.token)
   if (invitation.kind === 'add_passkey') {
     await findPasskeyTarget(locals.db, invitation)
@@ -42,6 +50,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     where: (g, { eq }) => eq(g.id, invitation.groupId),
   })
   return {
+    completed: false as const,
     kind: invitation.kind,
     email: invitation.email,
     role: invitation.role,
@@ -155,6 +164,7 @@ export const actions: Actions = {
       })
     }
 
-    redirect(303, '/')
+    // リダイレクトせずに同じ画面で完了を伝える
+    return { completed: true }
   },
 }

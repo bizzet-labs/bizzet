@@ -19,5 +19,11 @@
   "auth_invite_not_found": "The invitation was not found",
   "auth_invite_used": "This invitation has already been used",
   "auth_invite_expired": "This invitation has expired",
-  "auth_invite_for_wallet": "Please open this link in the wallet"
+  "auth_invite_for_wallet": "Please open this link in the wallet",
+  "auth_invite_completed_heading": "You're all set",
+  "auth_invite_completed_description": "You are now logged in to the dashboard and can start right away",
+  "auth_invite_already_completed_heading": "Registration is complete",
+  "auth_invite_already_completed_description": "This invitation has already been used to register. Log in with your email and password",
+  "auth_invite_open_dashboard": "Open the dashboard",
+  "auth_invite_go_login": "Go to login"
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+import CircleCheckIcon from '@lucide/svelte/icons/circle-check'
 import FingerprintIcon from '@lucide/svelte/icons/fingerprint'
 import MonitorIcon from '@lucide/svelte/icons/monitor'
 import { Button } from '@/components/ui/button/index.js'
@@ -11,6 +12,10 @@ let { data, form } = $props()
 let pending = $state(false)
 let error = $state('')
 let formEl = $state<HTMLFormElement>()
+
+// 登録した直後はログイン済み、使用済みの招待を開き直したときはログインが要る
+const justCompleted = $derived(form?.completed === true)
+const completed = $derived(justCompleted || data.completed)
 
 const roleLabel = { owner: 'Owner', approver: 'Approver', viewer: 'Viewer' }
 
@@ -41,7 +46,24 @@ async function handleRegister() {
 
 <main class="flex min-h-svh items-center justify-center p-6">
 	<Card.Root class="w-full max-w-sm">
-		{#if data.kind === 'add_password'}
+		{#if completed}
+			<Card.Header class="items-center text-center">
+				<CircleCheckIcon class="text-primary mb-2 size-12" />
+				<Card.Title>{justCompleted ? '登録が完了しました' : '登録は完了しています'}</Card.Title>
+				<Card.Description>
+					{justCompleted
+						? 'この端末のパスキーでウォレットを使い始められます'
+						: 'このリンクでの登録は済んでいます。登録したパスキーでログインしてください'}
+				</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<Button href={justCompleted ? '/' : '/login'} size="lg" class="w-full">
+					{justCompleted ? 'ホームへ進む' : 'ログイン画面へ'}
+				</Button>
+			</Card.Content>
+		{:else if data.completed}
+			<!-- completed で出し分け済み。以降の分岐で data の型を絞り込むための枝 -->
+		{:else if data.kind === 'add_password'}
 			<!-- パスワードの追加用リンクは、ダッシュボードで開いてパスワードを決める -->
 			<Card.Header class="items-center text-center">
 				<div class="bg-primary/10 text-primary mb-2 flex size-12 items-center justify-center rounded-full">
@@ -76,8 +98,8 @@ async function handleRegister() {
 					bind:this={formEl}
 					use:enhance={() => {
 						return async ({ result, update }) => {
-							if (result.type === 'redirect') startSession()
-							else pending = false
+							if (result.type === 'success' && result.data?.completed) startSession()
+							pending = false
 							await update()
 						}
 					}}
