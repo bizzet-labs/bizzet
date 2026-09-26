@@ -11,6 +11,7 @@ import {
 import { type Address, getAbiItem, getAddress } from 'viem'
 import { env } from '$env/dynamic/private'
 import { publicClient } from './chain'
+import { isDemoMode } from './demo'
 
 const CHAIN_ID = publicClient.chain.id
 const CURSOR_KEY = `deposits:${CHAIN_ID}`
@@ -44,6 +45,10 @@ export function syncDeposits(
   db: Db,
   options: { budgetMs?: number; force?: boolean } = {},
 ): Promise<SyncResult> {
+  // デモモードではチェーンを読まない。入金はウォレットがデータベースに直接書く
+  if (isDemoMode()) {
+    return Promise.resolve({ scannedTo: null, caughtUp: true, inserted: 0 })
+  }
   if (running) return running
   if (!options.force && Date.now() - lastFinishedAt < MIN_INTERVAL_MS) {
     return Promise.resolve({ scannedTo: null, caughtUp: true, inserted: 0 })

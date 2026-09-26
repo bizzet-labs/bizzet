@@ -3,7 +3,10 @@ import {
   readTokenBalances,
   tokens,
 } from '@bizzet/contracts'
+import { getDemoBalances } from '@bizzet/db'
 import { publicClient } from './chain'
+import { db } from './db'
+import { isDemoMode } from './demo'
 
 // 1つの Safe の通貨ごとの残高（最小単位）。個別の呼び出しが失敗した通貨は null
 export type TokenBalances = OnchainTokenBalances
@@ -19,5 +22,7 @@ export const balanceTokens = tokens.map((t) => ({
 export function getBalances(
   addresses: readonly string[],
 ): Promise<Map<string, TokenBalances>> {
+  // デモモードではチェーンを読まず、データベースの入金と実行済みの出金から求める
+  if (isDemoMode()) return getDemoBalances(db, addresses)
   return readTokenBalances(publicClient, addresses)
 }

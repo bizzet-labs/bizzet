@@ -24,5 +24,6 @@
   "common_error_invalid_input": "The input is not valid",
   "common_error_forbidden": "You do not have permission to do this",
   "common_error_not_found": "Not found",
-  "common_nav_account": "Account"
+  "common_nav_account": "Account",
+  "common_demo_banner": "Demo mode: chain transactions, ENS registration and passkey signatures are simulated"
 }

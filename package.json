@@ -18,7 +18,8 @@
     "db:generate": "pnpm --filter @bizzet/db run generate",
     "db:migrate": "pnpm --filter @bizzet/db run migrate",
     "db:studio": "pnpm --filter @bizzet/db run studio",
-    "db:seed": "pnpm --filter @bizzet/db run seed"
+    "db:seed": "pnpm --filter @bizzet/db run seed",
+    "db:seed:demo": "pnpm --filter @bizzet/db run seed:demo"
   },
   "engines": {
     "node": ">=20.0"

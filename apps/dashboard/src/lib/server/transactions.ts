@@ -3,6 +3,7 @@ import {
   and,
   type Db,
   eq,
+  getDemoBalances,
   groups,
   gt,
   inArray,
@@ -15,6 +16,8 @@ import { type Address, getAddress, type Hex } from 'viem'
 import { m } from '$lib/paraglide/messages.js'
 import type { Member } from './auth'
 import { publicClient } from './chain'
+import { db as appDb } from './db'
+import { isDemoMode } from './demo'
 import { getHeadquarters } from './safe'
 import { type Group, getVisibleGroups } from './visibility'
 
@@ -232,6 +235,8 @@ export async function syncSubmittedTransaction(
   tx: SafeTransaction,
 ): Promise<SafeTransaction> {
   if (tx.status !== 'submitted' || !tx.txHash) return tx
+  // デモモードでは、実行済みにするのはウォレットの役目のため、チェーンを確かめない
+  if (isDemoMode()) return tx
   try {
     const receipt = await publicClient.getTransactionReceipt({
       hash: tx.txHash as Hex,
@@ -286,6 +291,11 @@ async function refreshSafeOwners(db: Db, tx: SafeTransaction) {
 
 // Safe が持つ通貨の残高（最小単位）。読み取りに失敗したら null
 export async function getTokenBalance(safe: string, token: Address) {
+  if (isDemoMode()) {
+    const symbol = findToken(token)?.symbol
+    const balances = await getDemoBalances(appDb, [safe])
+    return symbol ? (balances.get(safe.toLowerCase())?.[symbol] ?? 0n) : null
+  }
   try {
     return await publicClient.readContract({
       address: token,

@@ -24,5 +24,6 @@
   "common_error_invalid_input": "入力内容が正しくありません",
   "common_error_forbidden": "この操作を行う権限がありません",
   "common_error_not_found": "見つかりません",
-  "common_nav_account": "アカウント"
+  "common_nav_account": "アカウント",
+  "common_demo_banner": "デモモード：チェーンへの送信・ENS の登録・パスキーの署名は模擬です"
 }

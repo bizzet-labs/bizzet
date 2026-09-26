@@ -19,6 +19,7 @@ import {
 import { type Address, getAddress, isAddress } from 'viem'
 import type { Member } from './auth'
 import { publicClient } from './chain'
+import { isDemoMode } from './demo'
 import { createSafeTransaction, getHeadquarters } from './safe'
 import type { Group } from './visibility'
 
@@ -54,7 +55,7 @@ async function findRolesProposal(db: Db, group: Group) {
 
 // Roles v2 がモジュールとして有効か。店舗の Safe が未配置なら、まだ有効にはなっていない
 async function isRolesEnabled(safe: Address, deployed: boolean) {
-  if (!deployed) return false
+  if (!deployed || isDemoMode()) return false
   return publicClient
     .readContract({
       address: safe,

@@ -13,6 +13,7 @@ import {
 } from '@bizzet/db'
 import { type Address, getAddress } from 'viem'
 import { publicClient } from './chain'
+import { fakeTxHash, isDemoMode } from './demo'
 import { operatorWallet } from './operator'
 import { computeGroupSafeAddress, getHeadquarters, isDeployed } from './safe'
 import type { Group } from './visibility'
@@ -78,6 +79,15 @@ export async function deployGroupSafe(
     return { ok: false, reason: 'unconfigured' }
   }
   const safe = getAddress(group.safeAddress)
+  // デモモードではチェーンに送らず、模擬の取引のハッシュで配置済みにする
+  if (isDemoMode()) {
+    if (group.safeDeployedAt) return { ok: false, reason: 'already_deployed' }
+    await db
+      .update(groups)
+      .set({ safeDeployedAt: new Date() })
+      .where(and(eq(groups.id, group.id), isNull(groups.safeDeployedAt)))
+    return { ok: true, txHash: fakeTxHash() }
+  }
   if (await isDeployed(safe)) {
     await refreshDeployment(db, group)
     return { ok: false, reason: 'already_deployed' }

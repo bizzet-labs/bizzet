@@ -10,6 +10,7 @@ import {
 import { and, type Db, type ensSettings, eq, groups, ne } from '@bizzet/db'
 import { getAddress, type Hex } from 'viem'
 import { publicClient } from './chain'
+import { fakeTxHash, isDemoMode } from './demo'
 import { isOperatorConfigured, operatorWallet } from './operator'
 
 type Group = typeof groups.$inferSelect
@@ -81,6 +82,19 @@ export async function syncGroupEns(
     db.query.groups.findFirst({ where: eq(groups.id, groupId) }),
     getEnsSettings(db),
   ])
+  // デモモードではチェーンに送らず、登録済みとして模擬の取引のハッシュを記録する
+  if (isDemoMode()) {
+    if (!group || !settings) return { ok: false, reason: 'not_configured' }
+    if (group.kind === 'store' && !group.ensLabel) {
+      return { ok: false, reason: 'no_label' }
+    }
+    const txHash = fakeTxHash()
+    await db
+      .update(groups)
+      .set({ ensStatus: 'registered', ensTxHash: txHash })
+      .where(eq(groups.id, group.id))
+    return { ok: true, txHash }
+  }
   const wallet = operatorWallet()
   if (!group || !settings || !wallet) {
     return { ok: false, reason: 'not_configured' }
@@ -142,11 +156,27 @@ export type GroupEnsView = {
 
 // 画面に出すグループの名前。値はデータベースではなく Universal Resolver で解決したものを使う
 export async function resolveGroupEns(
-  group: Pick<Group, 'kind' | 'ensLabel' | 'safeAddress'>,
+  group: Pick<
+    Group,
+    'kind' | 'ensLabel' | 'safeAddress' | 'name' | 'receivingCurrency'
+  >,
   settings: EnsSettings | null,
 ): Promise<GroupEnsView | null> {
   const name = groupEnsName(group, settings)
   if (!name) return null
+  // デモモードでは Universal Resolver を読まず、データベースの値を解決した値として出す
+  if (isDemoMode()) {
+    return {
+      name,
+      resolved: {
+        name,
+        address: group.safeAddress ? getAddress(group.safeAddress) : null,
+        currency: group.receivingCurrency,
+        description: group.name,
+      },
+      mismatch: false,
+    }
+  }
   const resolved = await resolveGroupName(publicClient, name).catch((e) => {
     console.error('ENS の名前の解決に失敗しました', e)
     return null

@@ -21,4 +21,9 @@ export {
   PASSWORD_MIN_LENGTH,
 } from './auth.ts'
 export { createDb, type Db, LOCAL_DATABASE_URL } from './client.ts'
+export {
+  type DemoBalances,
+  type DemoTokenSymbol,
+  getDemoBalances,
+} from './demo.ts'
 export * from './schema.ts'

@@ -11,6 +11,14 @@ let { data, children } = $props()
 const title = $derived((page.data.pageTitle as string | undefined) ?? '')
 </script>
 
+{#if data.demoMode}
+	<div
+		role="status"
+		class="sticky top-0 z-50 bg-amber-400 px-4 py-1.5 text-center text-sm font-medium text-amber-950"
+	>
+		{m.common_demo_banner()}
+	</div>
+{/if}
 {#if data.member}
 	<Sidebar.Provider>
 		<AppSidebar member={data.member} groupName={data.groupName} />

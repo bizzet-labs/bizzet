@@ -11,6 +11,7 @@
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio",
     "seed": "node --experimental-strip-types src/seed.ts",
+    "seed:demo": "node --experimental-strip-types src/seed-demo.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
