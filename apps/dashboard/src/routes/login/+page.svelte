@@ -1,7 +1,7 @@
 <script lang="ts">
-import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard'
 import LoginForm from '@/components/login-form.svelte'
 import * as Card from '@/components/ui/card/index.js'
+import logoMark from '$lib/assets/logo-mark.png'
 import { m } from '$lib/paraglide/messages.js'
 
 let { form } = $props()
@@ -15,9 +15,7 @@ let { form } = $props()
 	<span class="text-lg font-semibold">bizzet</span>
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="items-center text-center">
-			<div class="bg-primary/10 text-primary mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
-				<LayoutDashboardIcon class="size-6" />
-			</div>
+			<img src={logoMark} alt="" class="mx-auto mb-2 h-12 w-auto dark:invert" />
 			<Card.Title class="text-xl font-semibold">{m.auth_login_title()}</Card.Title>
 		</Card.Header>
 		<Card.Content>

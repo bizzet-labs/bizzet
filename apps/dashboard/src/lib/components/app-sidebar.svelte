@@ -6,6 +6,7 @@ import HouseIcon from '@lucide/svelte/icons/house'
 import UsersIcon from '@lucide/svelte/icons/users'
 import type { ComponentProps } from 'svelte'
 import * as Sidebar from '@/components/ui/sidebar/index.js'
+import logoMark from '$lib/assets/logo-mark.png'
 import { m } from '$lib/paraglide/messages.js'
 import type { Role } from '$lib/roles'
 import NavMain, { type NavItem } from './nav-main.svelte'
@@ -55,10 +56,8 @@ const items = $derived<NavItem[]>([
 				<Sidebar.MenuButton size="lg">
 					{#snippet child({ props })}
 						<a href="/" {...props}>
-							<div
-								class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg text-sm font-semibold"
-							>
-								b
+							<div class="flex aspect-square size-8 items-center justify-center">
+								<img src={logoMark} alt="" class="h-7 w-auto dark:invert" />
 							</div>
 							<div class="grid flex-1 text-start text-sm leading-tight">
 								<span class="truncate font-semibold">bizzet</span>

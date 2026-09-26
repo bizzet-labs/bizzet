@@ -7,7 +7,7 @@ import { themes as prismThemes } from 'prism-react-renderer'
 const config: Config = {
   title: 'bizzet',
   tagline: 'bizzet Documentation',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -61,7 +61,8 @@ const config: Config = {
       title: 'bizzet',
       logo: {
         alt: 'bizzet Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
+        srcDark: 'img/logo-dark.png',
       },
       items: [
         {
