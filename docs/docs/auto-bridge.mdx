@@ -15,7 +15,7 @@ import BridgeDiagram from '@site/src/components/BridgeDiagram';
 
 <BridgeDiagram />
 
-Base・Arbitrum・OP Mainnet など、CCTP v2 に対応したチェーンで USDC として着金した売上を、Safe 上の Sweep モジュールが閾値か1日1回で起動して集め、CCTP でホームチェーンへ移し、受け取る通貨が JPYC なら Uniswap で JPYC に替え、ホームの法人ウォレットに1つの台帳として集約します。Sweep の宛先はホームの Safe に固定されています。同一チェーン（Polygon がホームなら Polygon の着金）は決済時に交換済みなので、Sweep を通らず直接ホームに入ります。
+Base・Arbitrum・OP Mainnet など、CCTP v2 に対応したチェーンで USDC として着金した売上を、Safe 上の Sweep モジュールが閾値か1日1回で起動して集め、CCTP でホームチェーンへ移し、受け取る通貨が JPYC なら Uniswap で JPYC に替え、ホームの法人ウォレットに1つの台帳として集約します。Sweep の宛先はホームの Safe に固定されています。同一チェーン（ホームの Polygon での着金）は決済時に交換済みなので、Sweep を通らず直接ホームに入ります。
 
 「着金したら自動で」を人の署名なしで、かつ資金を盗めない形で実現する要点は Sweep の権限の狭さです。キーパー（Gelato や Chainlink Automation 等）が呼べるのは「ホームの Safe へ送る」だけです。USDC の移動は Circle の CCTP（ネイティブの焼却・発行）で、ラップ資産を持ちません。使うのは CCTP v2 だけで、CCTP v1 は 2026年10月31日から縮小が始まり 12月1日に停止するため使いません。
 
@@ -44,29 +44,22 @@ Base・Arbitrum・OP Mainnet など、CCTP v2 に対応したチェーンで USD
 
 ### ベータ版
 
-ベータ版のホームチェーンは Ethereum Sepolia です。客の支払いはマルチチェーンで受け付け、最終的に Sepolia の本部のウォレットに集約します。
-
-| 役割 | チェーン | 根拠 |
-| --- | --- | --- |
-| ホーム | Ethereum Sepolia | JPYC の公式テストトークン、CCTP v2、Uniswap v4 がすべて配置済み |
-| 客が払うチェーン（任意） | Avalanche Fuji、Polygon Amoy | JPYC の公式テストトークンと CCTP v2 が配置済み。Uniswap v4 はないが、交換はホームでだけ行うため不要 |
-
-ベータ版で必ず対応するのはホームの Sepolia だけで、客が払うチェーンは、実装が難しければ外してかまいません。
+ベータ版のホームチェーンは Ethereum Sepolia で、JPYC の公式テストトークン、CCTP v2、Uniswap v4 がすべて配置済みです。ベータ版は客の支払いも Sepolia だけで受け付けるため、自動ブリッジは動かしません。店舗から本部への売上の集約は、同じ Sepolia の中で Sweep が行います。
 
 ### 本番
 
-仮置き：ガス代と確定時間の比較が済んだ時点で更新します。JPYC は Ethereum・Polygon・Avalanche・Kaia で発行されていますが、Kaia には Uniswap v4 がないため、Ethereum・Polygon・Avalanche の3つを候補として、ガス代と確定時間からホームを選びます。3つとも CCTP v2 に対応しています。
+本番のホームチェーンは Polygon PoS とします。JPYC は Ethereum・Polygon・Avalanche・Kaia で発行されていますが、Kaia には Uniswap v4 がありません。残る3つのうち、Polygon はパスキーの署名の検証に専用の機能があり、ガス代も Ethereum より安いため、メンバーの署名と決済時の交換を毎日くり返すホームに向きます。
 
 | チェーン | CCTP v2 | 転送方式 | 自動ブリッジでの扱い |
 | --- | --- | --- | --- |
-| Ethereum | 対応 | 高速・標準 | ホーム候補、客が払うチェーン |
-| Polygon PoS | 対応 | 標準のみ | ホーム候補、客が払うチェーン |
-| Avalanche | 対応 | 標準のみ | ホーム候補、客が払うチェーン |
+| Ethereum | 対応 | 高速・標準 | 客が払うチェーン |
+| Polygon PoS | 対応 | 標準のみ | ホーム |
+| Avalanche | 対応 | 標準のみ | 客が払うチェーン |
 | Base、Arbitrum、OP Mainnet | 対応 | 高速・標準 | 客が払うチェーン |
 | Sui | 未対応（v1 のみ） | — | 今後の対応予定 |
 | Kaia | 未対応 | — | 今後の対応予定 |
 
-標準転送は送り元チェーンの確定を待つため、Polygon と Avalanche から移す売上は、高速転送のチェーンより本部のウォレットへの到着が遅くなります。
+標準転送は送り元チェーンの確定を待つため、Avalanche から移す売上は、高速転送のチェーンより本部のウォレットへの到着が遅くなります。ホームの Polygon で払われた売上は、決済時に交換済みのためブリッジを通りません。
 
 ### 今後の対応予定
 
