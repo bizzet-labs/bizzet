@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import path from 'node:path'
 import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import adapter from '@sveltejs/adapter-auto'
@@ -45,5 +46,9 @@ export default defineConfig({
     alias: {
       $lib: path.resolve('./src/lib'),
     },
+  },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.ts'],
   },
 })
