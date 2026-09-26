@@ -1,13 +1,15 @@
 <script lang="ts">
 import { Badge } from '@/components/ui/badge/index.js'
+import { m } from '$lib/paraglide/messages.js'
+import type { Role } from './columns.js'
 
-let { role }: { role: 'owner' | 'approver' | 'viewer' } = $props()
+let { role }: { role: Role } = $props()
 
 const ROLE_LABELS = {
-  owner: 'Owner',
-  approver: 'Approver',
-  viewer: 'Viewer',
+  owner: m.common_role_owner,
+  approver: m.common_role_approver,
+  viewer: m.common_role_viewer,
 } as const
 </script>
 
-<Badge variant="secondary">{ROLE_LABELS[role]}</Badge>
+<Badge variant="secondary">{ROLE_LABELS[role]()}</Badge>

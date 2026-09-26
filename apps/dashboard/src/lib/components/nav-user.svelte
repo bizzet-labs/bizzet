@@ -13,8 +13,13 @@ import { getLocale, type Locale, setLocale } from '$lib/paraglide/runtime'
 
 let {
   member,
-}: { member: { email: string; role: 'owner' | 'approver' | 'viewer' } } =
-  $props()
+}: {
+  member: {
+    email: string
+    name: string | null
+    role: 'owner' | 'approver' | 'viewer'
+  }
+} = $props()
 const sidebar = useSidebar()
 
 const ROLE_LABELS = {
@@ -30,7 +35,9 @@ const LOCALES: { locale: Locale; label: () => string }[] = [
 ]
 const currentLocale = getLocale()
 
-const initial = $derived(member.email.charAt(0).toUpperCase())
+// 名前があれば名前を、なければメールアドレスを出す
+const label = $derived(member.name || member.email)
+const initial = $derived(label.charAt(0).toUpperCase())
 
 let logoutForm: HTMLFormElement | undefined = $state()
 </script>
@@ -40,7 +47,7 @@ let logoutForm: HTMLFormElement | undefined = $state()
 		<Avatar.Fallback class="rounded-lg">{initial}</Avatar.Fallback>
 	</Avatar.Root>
 	<div class="grid flex-1 text-start text-sm leading-tight">
-		<span class="truncate font-medium">{member.email}</span>
+		<span class="truncate font-medium">{label}</span>
 		<span class="text-muted-foreground truncate text-xs">{ROLE_LABELS[member.role]()}</span>
 	</div>
 {/snippet}
