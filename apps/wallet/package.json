@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@bizzet/contracts": "workspace:*",
+    "@bizzet/db": "workspace:*",
     "ox": "^0.14.45",
     "permissionless": "^0.4.1",
     "viem": "^2.56.9"
