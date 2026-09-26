@@ -5,6 +5,7 @@ import { getAddress } from 'viem'
 import { m } from '$lib/paraglide/messages.js'
 import { balanceTokens, getBalances } from '$lib/server/balances'
 import { syncDeposits } from '$lib/server/deposits'
+import { getEnsSettings, resolveGroupEns } from '$lib/server/ens'
 import { isDeployed } from '$lib/server/safe'
 import { canSeeGroup } from '$lib/server/visibility'
 import type { PageServerLoad } from './$types'
@@ -34,7 +35,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   })
 
   const safeAddress = group.safeAddress ? getAddress(group.safeAddress) : null
-  const [balanceResult, deployed, history] = await Promise.all([
+  const [balanceResult, deployed, history, ens] = await Promise.all([
     safeAddress ? loadBalances(safeAddress) : Promise.resolve(undefined),
     safeAddress
       ? loadDeployed(safeAddress, group.safeDeployedAt !== null)
@@ -44,6 +45,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       orderBy: [desc(deposits.blockTimestamp), desc(deposits.logIndex)],
       limit: DEPOSIT_LIMIT,
     }),
+    getEnsSettings(db).then((settings) => resolveGroupEns(group, settings)),
   ])
 
   return {
@@ -58,6 +60,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       // true：配置済み、false：未配置、null：チェーンに確認できなかった
       deployed,
     },
+    // ENS の名前がなければ null。表示する値は Universal Resolver で解決したもの
+    ens,
     // undefined：Safe が未設定、null：RPC の失敗で読めなかった
     balances:
       balanceResult === undefined

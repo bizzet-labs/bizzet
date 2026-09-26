@@ -15,6 +15,7 @@ import { getLocale } from '$lib/paraglide/runtime'
 import SafeStatusBadge from '../../safe-status-badge.svelte'
 import { candidateColumns } from './columns.js'
 import ConfirmSubmit from './confirm-submit.svelte'
+import EnsCard from './ens-card.svelte'
 
 let { data, form } = $props()
 
@@ -69,6 +70,8 @@ function proposalStatusLabel(status: string, signatureCount: number) {
 			</Alert.Description>
 		</Alert.Root>
 	{/if}
+
+	<EnsCard kind={data.group.kind} canManage={data.canManage} ens={data.ens} />
 
 	{#if data.safe}
 		<Card.Root>

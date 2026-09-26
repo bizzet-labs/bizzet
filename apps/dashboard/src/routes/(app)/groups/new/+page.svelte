@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -16,6 +17,8 @@ import { m } from '$lib/paraglide/messages.js'
 let { data, form } = $props()
 
 let submitting = $state(false)
+// ラベルは英小文字・数字・ハイフンの3〜32文字（サーバーでも同じ規則で確かめる）
+const LABEL_PATTERN = '[a-z0-9\\-]{3,32}'
 </script>
 
 <svelte:head>
@@ -49,7 +52,7 @@ let submitting = $state(false)
 				}}
 			>
 				<FieldGroup>
-					<Field data-invalid={form?.message ? true : undefined}>
+					<Field data-invalid={form?.message && !form?.labelError ? true : undefined}>
 						<FieldLabel for="name">{m.groups_new_name_label()}</FieldLabel>
 						<Input
 							id="name"
@@ -57,9 +60,27 @@ let submitting = $state(false)
 							required
 							maxlength={100}
 							value={form?.name ?? ''}
-							aria-invalid={form?.message ? true : undefined}
+							aria-invalid={form?.message && !form?.labelError ? true : undefined}
 						/>
-						{#if form?.message}
+						{#if form?.message && !form?.labelError}
+							<FieldError>{form.message}</FieldError>
+						{/if}
+					</Field>
+					<Field data-invalid={form?.labelError ? true : undefined}>
+						<FieldLabel for="label">{m.groups_ens_label_label()}</FieldLabel>
+						<Input
+							id="label"
+							name="label"
+							maxlength={32}
+							pattern={LABEL_PATTERN}
+							placeholder="shibuya"
+							value={form?.label ?? ''}
+							aria-invalid={form?.labelError ? true : undefined}
+						/>
+						<FieldDescription>
+							{m.groups_ens_label_description({ hq: data.hqEnsName ?? 'bizzet.eth' })}
+						</FieldDescription>
+						{#if form?.labelError}
 							<FieldError>{form.message}</FieldError>
 						{/if}
 					</Field>

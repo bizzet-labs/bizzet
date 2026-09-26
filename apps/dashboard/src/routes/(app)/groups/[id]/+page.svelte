@@ -11,6 +11,7 @@ import * as Card from '@/components/ui/card/index.js'
 import * as Empty from '@/components/ui/empty/index.js'
 import { formatTokenAmount } from '$lib/format'
 import { m } from '$lib/paraglide/messages.js'
+import EnsResolved from '../ens-resolved.svelte'
 import { depositColumns } from './columns.js'
 
 let { data } = $props()
@@ -37,6 +38,9 @@ const kindLabel = $derived(
 				{/if}
 			</h1>
 			<p class="text-muted-foreground text-sm">{m.home_group_description()}</p>
+			{#if data.ens}
+				<p class="font-mono text-sm">{data.ens.name}</p>
+			{/if}
 		</div>
 		<!-- Safe の設定を扱えるのは Owner だけ -->
 		{#if data.isOwner}
@@ -46,6 +50,18 @@ const kindLabel = $derived(
 			</Button>
 		{/if}
 	</div>
+
+	{#if data.ens}
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>{m.groups_ens_card_title()}</Card.Title>
+				<Card.Description class="font-mono">{data.ens.name}</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<EnsResolved view={data.ens} />
+			</Card.Content>
+		</Card.Root>
+	{/if}
 
 	{#if data.group.safeAddress === null}
 		<Card.Root>

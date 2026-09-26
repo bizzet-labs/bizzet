@@ -2,6 +2,7 @@ import { createColumnHelper, renderComponent } from '@tanstack/svelte-table'
 import type { DataTableFeatures } from '@/components/data-table/data-table-features.js'
 import { m } from '$lib/paraglide/messages.js'
 import type { GroupKind } from '$lib/roles'
+import EnsNameCell from './ens-name-cell.svelte'
 import GroupKindBadge from './group-kind-badge.svelte'
 import GroupNameCell from './group-name-cell.svelte'
 import SafeStatusBadge from './safe-status-badge.svelte'
@@ -13,6 +14,9 @@ export type GroupRow = {
   kind: GroupKind
   safeStatus: 'unconfigured' | 'undeployed' | 'deployed'
   memberCount: number
+  ensName: string | null
+  ensStatus: 'unregistered' | 'registered' | 'failed'
+  ensMismatch: boolean
 }
 
 const columnHelper = createColumnHelper<DataTableFeatures, GroupRow>()
@@ -36,6 +40,15 @@ const allColumns = columnHelper.columns([
     header: () => m.groups_column_safe(),
     cell: ({ row }) =>
       renderComponent(SafeStatusBadge, { status: row.original.safeStatus }),
+  }),
+  columnHelper.accessor('ensName', {
+    header: () => m.groups_column_ens(),
+    cell: ({ row }) =>
+      renderComponent(EnsNameCell, {
+        name: row.original.ensName,
+        status: row.original.ensStatus,
+        mismatch: row.original.ensMismatch,
+      }),
   }),
   columnHelper.accessor('memberCount', {
     header: () => m.groups_column_members(),

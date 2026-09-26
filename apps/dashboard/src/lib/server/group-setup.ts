@@ -23,6 +23,7 @@ import {
 import { type Address, getAddress, isAddress } from 'viem'
 import type { Member } from './auth'
 import { publicClient } from './chain'
+import { checkLabel, getEnsSettings, resolveGroupEns } from './ens'
 import {
   computeGroupSafeAddress,
   createSafeTransaction,
@@ -77,7 +78,7 @@ function safeStatus(group: Group, deployed: boolean): SafeStatus {
 export async function listGroups(db: Db, member: Member) {
   const visible = await getVisibleGroups(db, member)
   if (visible.length === 0) return []
-  const [counts, deployed] = await Promise.all([
+  const [counts, deployed, ens] = await Promise.all([
     db
       .select({ groupId: members.groupId, count: count() })
       .from(members)
@@ -89,6 +90,9 @@ export async function listGroups(db: Db, member: Member) {
       )
       .groupBy(members.groupId),
     Promise.all(visible.map((g) => refreshDeployment(db, g))),
+    getEnsSettings(db).then((settings) =>
+      Promise.all(visible.map((g) => resolveGroupEns(g, settings))),
+    ),
   ])
   return visible.map((group, i) => ({
     id: group.id,
@@ -96,6 +100,9 @@ export async function listGroups(db: Db, member: Member) {
     kind: group.kind,
     safeStatus: safeStatus(group, (deployed[i] ?? null) !== null),
     memberCount: counts.find((c) => c.groupId === group.id)?.count ?? 0,
+    ensName: ens[i]?.name ?? null,
+    ensStatus: group.ensStatus,
+    ensMismatch: ens[i]?.mismatch ?? false,
   }))
 }
 
@@ -130,12 +137,22 @@ async function configureStoreSafeWith(db: Db, groupId: string, hq: Group) {
 
 export type CreateStoreResult =
   | { ok: true; id: string }
-  | { ok: false; reason: 'name_required' | 'name_taken' | 'no_headquarters' }
+  | {
+      ok: false
+      reason:
+        | 'name_required'
+        | 'name_taken'
+        | 'no_headquarters'
+        | 'invalid_label'
+        | 'label_taken'
+    }
 
-// 店舗のグループを作る。本部の Safe が設定済みなら、店舗の Safe の設定も同時に確定する
+// 店舗のグループを作る。本部の Safe が設定済みなら、店舗の Safe の設定も同時に確定する。
+// ENS の名前の登録はここでは行わず、作成後に呼び出し側が行う（失敗しても作成を取り消さないため）
 export async function createStore(
   db: Db,
   rawName: string,
+  rawLabel = '',
 ): Promise<CreateStoreResult> {
   const name = rawName.trim()
   if (!name) return { ok: false, reason: 'name_required' }
@@ -144,12 +161,14 @@ export async function createStore(
   if (await isGroupNameTaken(db, name)) {
     return { ok: false, reason: 'name_taken' }
   }
+  const label = await checkLabel(db, rawLabel)
+  if (!label.ok) return { ok: false, reason: label.reason }
   const id = randomUUID()
   // 名前の重複は DB の一意制約（大文字と小文字を区別しない）でも防ぐ。先の確認のあとに同じ名前が
   // 同時に作られた場合は、制約違反（23505）になるので同じ「名前が重複」として返す
   const inserted = await db
     .insert(groups)
-    .values({ id, name, kind: 'store' })
+    .values({ id, name, kind: 'store', ensLabel: label.label })
     .onConflictDoNothing()
     .returning({ id: groups.id })
   if (inserted.length === 0) return { ok: false, reason: 'name_taken' }
