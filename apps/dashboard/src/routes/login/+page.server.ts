@@ -1,40 +1,32 @@
 import { fail, redirect } from '@sveltejs/kit'
-import {
-  createSession,
-  issueChallenge,
-  type LoginResponse,
-  verifyLogin,
-} from '$lib/server/auth'
-import type { Actions, PageServerLoad } from './$types'
-
-export const load: PageServerLoad = async ({ cookies }) => {
-  return { challenge: issueChallenge(cookies) }
-}
+import { APIError } from 'better-auth'
+import { getAuth } from '$lib/server/auth'
+import type { Actions } from './$types'
 
 export const actions: Actions = {
-  default: async ({ cookies, locals, request, url }) => {
+  default: async ({ request }) => {
     const form = await request.formData()
-    const raw = form.get('response')
-    if (typeof raw !== 'string') {
-      return fail(400, { message: 'パスキーの応答がありません' })
+    const email = form.get('email')
+    const password = form.get('password')
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return fail(400, { email: '', message: '入力内容が正しくありません' })
     }
 
-    let response: LoginResponse
+    // sveltekitCookies によりセッションの Cookie はここで発行される
     try {
-      response = JSON.parse(raw) as LoginResponse
-    } catch {
-      return fail(400, { message: 'パスキーの応答を読み取れません' })
-    }
-
-    const member = await verifyLogin(locals.db, cookies, response, url.origin)
-    if (!member) {
-      return fail(401, {
-        message:
-          'このパスキーは登録されていません。管理者から招待を受けてください',
+      await getAuth().api.signInEmail({
+        body: { email, password },
+        headers: request.headers,
       })
+    } catch (e) {
+      if (e instanceof APIError) {
+        return fail(401, {
+          email,
+          message: 'メールアドレスまたはパスワードが違います',
+        })
+      }
+      throw e
     }
-
-    await createSession(locals.db, cookies, member.id)
     redirect(303, '/')
   },
 }

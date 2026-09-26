@@ -1,8 +1,8 @@
 import { redirect } from '@sveltejs/kit'
-import { deleteSession } from '$lib/server/auth'
+import { getAuth } from '$lib/server/auth'
 import type { RequestHandler } from './$types'
 
-export const POST: RequestHandler = async ({ cookies, locals }) => {
-  await deleteSession(locals.db, cookies)
+export const POST: RequestHandler = async ({ request }) => {
+  await getAuth().api.signOut({ headers: request.headers })
   redirect(303, '/login')
 }
