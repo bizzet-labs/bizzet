@@ -146,6 +146,8 @@ export async function configureStoreSafeWith(
       safeOwners: owners,
       safeThreshold: STORE_THRESHOLD,
       safeSaltNonce: saltNonce.toString(),
+      // デモモードでは配置の取引を送らないため、設定の確定と同時に配置済みにする
+      ...(isDemoMode() ? { safeDeployedAt: new Date() } : {}),
     })
     .where(and(eq(groups.id, groupId), isNull(groups.safeAddress)))
     .returning({ id: groups.id })
