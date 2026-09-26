@@ -31,6 +31,7 @@ const sidebars: SidebarsConfig = {
             'passkey',
             'dashboard',
             'auto-bridge',
+            'ens',
           ],
         },
         'pricing',
