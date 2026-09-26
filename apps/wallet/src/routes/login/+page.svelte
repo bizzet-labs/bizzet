@@ -9,6 +9,7 @@ import {
   startSession,
 } from '@/passkey.js'
 import { goto } from '$app/navigation'
+import logoMark from '$lib/assets/logo-mark.png'
 
 let pending = $state(false)
 let error = $state('')
@@ -42,9 +43,7 @@ async function handleLogin() {
 <main class="flex min-h-svh items-center justify-center p-6">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="items-center text-center">
-			<div class="bg-primary/10 text-primary mb-2 flex size-12 items-center justify-center rounded-full">
-				<FingerprintIcon class="size-6" />
-			</div>
+			<img src={logoMark} alt="" class="mb-2 h-12 w-auto dark:invert" />
 			<Card.Title>bizzet</Card.Title>
 			<Card.Description>登録したパスキーでログインします</Card.Description>
 		</Card.Header>

@@ -1,7 +1,7 @@
 <script lang="ts">
 import { BottomNav } from '@/components/bottom-nav/index.js'
 import { page } from '$app/state'
-import favicon from '$lib/assets/favicon.svg'
+import favicon from '$lib/assets/favicon.png'
 import './layout.css'
 
 let { children } = $props()
