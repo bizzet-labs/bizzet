@@ -11,27 +11,27 @@ type Box = {
   strong?: boolean
 }
 
-// 座標は、帯の見出しの列を除いた 760 × 466 の上の値
+// 座標は、帯の見出しの列を除いた 760 × 436 の上の値
 const boxes: Box[] = [
   {
     x: 20,
     y: 26,
-    w: 210,
-    h: 56,
-    title: '支払ったアドレス',
-    lines: ['秘密から識別子を作る'],
+    w: 250,
+    h: 60,
+    title: '決済ページ（bizzet）',
+    lines: ['秘密を保存し、識別子と証明を作る'],
   },
   {
-    x: 530,
+    x: 490,
     y: 26,
-    w: 210,
-    h: 56,
-    title: '証明を出すアドレス',
-    lines: ['秘密から証明を作る'],
+    w: 250,
+    h: 60,
+    title: '客のウォレット',
+    lines: ['支払いの取引に署名する'],
   },
   {
     x: 280,
-    y: 140,
+    y: 150,
     w: 200,
     h: 56,
     title: 'Checkout コントラクト',
@@ -39,24 +39,16 @@ const boxes: Box[] = [
     strong: true,
   },
   {
-    x: 20,
-    y: 270,
-    w: 210,
+    x: 40,
+    y: 250,
+    w: 260,
     h: 64,
-    title: 'Semaphore のグループ',
-    lines: ['店と商品ごとの識別子の集合'],
-  },
-  {
-    x: 530,
-    y: 270,
-    w: 210,
-    h: 64,
-    title: '検証コントラクト',
-    lines: ['集合の根と照合して証明を検証', '特典ごとの使用済み（nullifier）'],
+    title: 'Semaphore v4',
+    lines: ['商品ごとの集合', '証明の検証と使用済みの記録'],
   },
   {
     x: 280,
-    y: 388,
+    y: 354,
     w: 200,
     h: 60,
     title: '店',
@@ -70,43 +62,52 @@ type Edge = {
   lx?: number
   ly?: number
   both?: boolean
-  // 破線で、矢じりを付けない（流れではなく関係を表す線）
+  // 破線で、矢じりを付けない（流れではなく参照を表す線）
   dashed?: boolean
 }
 
 // ラベルの番号は、本文の「仕組み」の手順の番号に対応する
 const edges: Edge[] = [
   {
-    d: 'M230 54 H530',
-    label: '同じ秘密から作る（別のアドレスでよい）',
-    lx: 262,
-    ly: 46,
-    dashed: true,
+    d: 'M270 56 H486',
+    label: '支払いの中身（識別子か証明）',
+    lx: 282,
+    ly: 48,
   },
-  { d: 'M125 82 V168 H276', label: '1 支払い＋識別子', lx: 133, ly: 130 },
-  { d: 'M330 196 V236 H125 V266', label: '2 識別子を登録', lx: 140, ly: 229 },
-  { d: 'M635 82 V168 H484', label: '3 支払い＋証明', lx: 643, ly: 130 },
   {
-    d: 'M430 196 V236 H635 V266',
-    label: '4 条件・範囲・証明 ／ 真偽',
-    lx: 448,
-    ly: 229,
+    d: 'M615 86 V178 H484',
+    label: '1 支払い＋識別子\n3 支払い＋証明',
+    lx: 623,
+    ly: 122,
+  },
+  {
+    d: 'M330 206 V228 H170 V246',
+    label: '2 登録 ／ 4 検証と記録',
+    lx: 172,
+    ly: 222,
     both: true,
   },
-  { d: 'M380 196 V384', label: '割引後の金額で決済', lx: 388, ly: 330 },
+  {
+    d: 'M100 250 V86',
+    label: '集合の中身を読む（公開）',
+    lx: 108,
+    ly: 170,
+    dashed: true,
+  },
+  { d: 'M380 206 V350', label: '割引後の金額で決済', lx: 388, ly: 290 },
 ]
 
 const lanes = [
-  { y: 4, h: 96, label: '客の\nウォレット' },
-  { y: 108, h: 250, label: 'オンチェーン\n（Sepolia）' },
-  { y: 366, h: 96, label: '店' },
+  { y: 4, h: 96, label: '客の端末' },
+  { y: 108, h: 216, label: 'オンチェーン\n（Sepolia）' },
+  { y: 332, h: 100, label: '店' },
 ]
 
 export default function ReceiptDiagram(): ReactNode {
   return (
     <figure className={styles.figure} aria-label="Receipt の全体の構成">
       <div className={styles.scroll}>
-        <svg className={styles.svg} viewBox="0 0 872 466" role="img">
+        <svg className={styles.svg} viewBox="0 0 872 436" role="img">
           <title>Receipt の全体の構成</title>
           <defs>
             <marker
@@ -154,7 +155,11 @@ export default function ReceiptDiagram(): ReactNode {
                 />
                 {edge.label && (
                   <text x={edge.lx} y={edge.ly} className={styles.edgeLabel}>
-                    {edge.label}
+                    {edge.label.split('\n').map((line, i) => (
+                      <tspan key={line} x={edge.lx} dy={i === 0 ? 0 : 14}>
+                        {line}
+                      </tspan>
+                    ))}
                   </text>
                 )}
               </g>
