@@ -61,9 +61,10 @@ function Arrow({
 
 type Owner = { title: string; role: string }
 
-const owners: Owner[] = [
-  { title: '経営', role: 'Owner' },
-  { title: '会計部', role: 'Approver' },
+const owners: (Owner & { id: string })[] = [
+  { id: 'exec-a', title: '経営', role: 'Owner' },
+  { id: 'exec-b', title: '経営', role: 'Owner' },
+  { id: 'accounting', title: '会計部', role: 'Approver' },
 ]
 
 const stores = [
@@ -75,9 +76,9 @@ export function DeploymentDiagram(): ReactNode {
   return (
     <figure className={styles.figure} aria-label="Safe の上下関係">
       <div className={styles.stack}>
-        <div className={styles.row}>
+        <div className={styles.rowThree}>
           {owners.map((owner) => (
-            <div key={owner.title} className={styles.member}>
+            <div key={owner.id} className={styles.member}>
               <span className={styles.memberIcon}>
                 <UserIcon />
               </span>
@@ -91,7 +92,7 @@ export function DeploymentDiagram(): ReactNode {
           ))}
         </div>
 
-        <div className={styles.merge} aria-hidden="true" />
+        <div className={styles.mergeThree} aria-hidden="true" />
         <Arrow label="オーナーになる" />
 
         <div className={styles.safeHq}>
@@ -143,7 +144,7 @@ const boxes: Box[] = [
     w: 180,
     h: 52,
     title: 'ウォレットアプリ',
-    lines: ['パスキーで署名'],
+    lines: ['パスキーで Safe の取引に署名'],
   },
   {
     x: 35,
@@ -154,34 +155,34 @@ const boxes: Box[] = [
     lines: ['閾値か1日1回で起動'],
   },
   {
-    x: 255,
-    y: 152,
-    w: 130,
-    h: 52,
-    title: 'バンドラー',
-    lines: ['取引をまとめて送る'],
+    x: 250,
+    y: 128,
+    w: 190,
+    h: 104,
+    title: 'bizzet のバックエンド',
+    lines: [
+      'パスキーと署名の検証',
+      '申請と途中の署名の保管',
+      '招待と閲覧権限',
+      '中継用アカウントで送信',
+    ],
+    strong: true,
   },
   {
-    x: 440,
+    x: 490,
     y: 152,
-    w: 130,
+    w: 120,
+    h: 52,
+    title: 'バンドラー',
+    lines: ['EntryPoint へ送る'],
+  },
+  {
+    x: 660,
+    y: 152,
+    w: 100,
     h: 52,
     title: 'Paymaster',
     lines: ['ガス代を肩代わり'],
-  },
-  {
-    x: 590,
-    y: 128,
-    w: 160,
-    h: 104,
-    title: 'Bizzet のバックエンド',
-    lines: [
-      'パスキーの対応表',
-      '2人承認の途中の署名',
-      '閲覧権限・招待',
-      'Paymaster の API キー',
-    ],
-    strong: true,
   },
   {
     x: 40,
@@ -205,12 +206,20 @@ const boxes: Box[] = [
     w: 150,
     h: 56,
     title: 'Safe4337Module',
-    lines: ['Safe へ取り次ぐ'],
+    lines: ['中継用アカウントへ取り次ぐ'],
   },
   {
     x: 600,
     y: 300,
-    w: 140,
+    w: 150,
+    h: 56,
+    title: '中継用アカウント',
+    lines: ['bizzet の Safe（資金なし）'],
+  },
+  {
+    x: 420,
+    y: 400,
+    w: 150,
     h: 56,
     title: '本部・店舗の Safe',
     lines: ['資金の保管'],
@@ -218,7 +227,7 @@ const boxes: Box[] = [
   },
   {
     x: 420,
-    y: 400,
+    y: 480,
     w: 150,
     h: 56,
     title: 'パスキー署名者',
@@ -235,39 +244,44 @@ type Edge = {
 }
 
 const edges: Edge[] = [
+  { d: 'M320 76 V124', label: '署名と申請を送る', lx: 328, ly: 108 },
+  { d: 'M440 178 H486', label: '取引', lx: 452, ly: 170 },
+  { d: 'M610 178 H656', label: 'ガス代', lx: 617, ly: 170, both: true },
   {
-    d: 'M410 50 H670 V124',
-    label: '対応表の照会\n署名の保管',
-    lx: 580,
-    ly: 68,
-    both: true,
+    d: 'M550 204 V270 H320 V296',
+    label: '取引を送る',
+    lx: 400,
+    ly: 264,
   },
-  { d: 'M320 76 V148', label: '署名した取引', lx: 328, ly: 116 },
-  { d: 'M385 178 H436', label: 'ガス代', lx: 394, ly: 170, both: true },
-  { d: 'M320 204 V296', label: '取引を送る', lx: 328, ly: 262 },
   { d: 'M125 204 V296', label: 'Sweep を起動', lx: 133, ly: 262 },
   { d: 'M390 328 H416' },
   { d: 'M570 328 H596' },
-  { d: 'M670 356 V428 H574', label: '署名の検証', lx: 590, ly: 420 },
   {
-    d: 'M125 356 V476 H710 V360',
+    d: 'M675 356 V428 H574',
+    label: '署名つきで実行',
+    lx: 588,
+    ly: 420,
+  },
+  { d: 'M495 456 V476', label: '署名の検証', lx: 503, ly: 470 },
+  {
+    d: 'M125 356 V428 H416',
     label: '宛先を本部の Safe に固定した送金',
-    lx: 290,
-    ly: 468,
+    lx: 140,
+    ly: 420,
   },
 ]
 
 const lanes = [
   { y: 4, h: 88, label: 'メンバーの\n端末' },
   { y: 100, h: 144, label: 'オフチェーン' },
-  { y: 252, h: 240, label: 'オンチェーン\n（Sepolia）' },
+  { y: 252, h: 296, label: 'オンチェーン\n（Sepolia）' },
 ]
 
 export function ArchitectureDiagram(): ReactNode {
   return (
     <figure className={styles.figure} aria-label="ウォレットの全体の構成">
       <div className={styles.scroll}>
-        <svg className={styles.svg} viewBox="0 0 872 500" role="img">
+        <svg className={styles.svg} viewBox="0 0 872 552" role="img">
           <title>ウォレットの全体の構成</title>
           <defs>
             <marker
