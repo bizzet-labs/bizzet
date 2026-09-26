@@ -5,7 +5,11 @@
   "scripts": {
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "dev": "pnpm --parallel -r run dev",
+    "dev:docs": "pnpm --filter @bizzet/docs run dev",
+    "dev:dashboard": "pnpm --filter @bizzet/dashboard run dev",
+    "dev:wallet": "pnpm --filter @bizzet/wallet run dev"
   },
   "engines": {
     "node": ">=20.0"
