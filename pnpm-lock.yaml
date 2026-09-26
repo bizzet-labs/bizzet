@@ -16,6 +16,10 @@ importers:
         version: 2.1.14
 
   apps/dashboard:
+    dependencies:
+      '@bizzet/db':
+        specifier: workspace:*
+        version: link:../../packages/db
     devDependencies:
       '@lucide/svelte':
         specifier: ^1.48.0
