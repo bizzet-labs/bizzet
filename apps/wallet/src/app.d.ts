@@ -7,6 +7,8 @@ declare global {
     // interface Error {}
     interface Locals {
       db: Db
+      // ログインしたパスキーのクレデンシャル ID。署名つきのセッションの Cookie から読む
+      passkeyId: string | null
     }
     // interface PageData {}
     // interface PageState {}

@@ -3,7 +3,7 @@ import {
   signerFactoryAbi,
   verifiers,
 } from '@bizzet/contracts'
-import { Bytes, Hex, PublicKey, WebAuthnP256 } from 'ox'
+import { Hex, WebAuthnP256 } from 'ox'
 import type { Address } from 'viem'
 import { createWebAuthnCredential } from 'viem/account-abstraction'
 import { env } from '$env/dynamic/public'
@@ -13,9 +13,9 @@ import { publicClient } from './chain.js'
 // 一方で登録したパスキーを他方のログインでも使える。未設定なら表示中のホスト名
 export const RP_ID = env.PUBLIC_PASSKEY_RP_ID || undefined
 
-// 仮置き：パスキーと署名者の対応表は本来バックエンドに置く。バックエンドを決めるまではブラウザ内に保存する
+// ログインや署名に使うパスキーを選ぶため、この端末のパスキーの情報をブラウザ内に保存する。
+// 正本は DB にあり、ログインのたびにサーバーが返した情報で保存し直す
 const STORAGE_KEY = 'bizzet:passkey'
-const SESSION_KEY = 'bizzet:session'
 
 export type StoredPasskey = {
   id: string
@@ -67,36 +67,46 @@ export async function registerPasskey(): Promise<StoredPasskey> {
   return passkey
 }
 
-// 保存したパスキーで使い捨てのチャレンジに署名させ、公開鍵で検証する
-export async function authenticatePasskey(passkey: StoredPasskey) {
-  const challenge = Hex.fromBytes(Bytes.random(32))
-  const { metadata, signature } = await WebAuthnP256.sign({
-    credentialId: passkey.id,
+// サーバーが出した使い捨てのチャレンジにパスキーで署名させ、サーバーで検証してもらってログインする。
+// 端末にパスキーの情報がなければ、端末が持つパスキーから選ばせ、サーバーが返した情報を保存し直す
+export async function login(passkey: StoredPasskey | null) {
+  const { challenge } = await postJson<{ challenge: Hex.Hex }>(
+    '/api/session/challenge',
+  )
+  const { id, metadata, signature } = await WebAuthnP256.sign({
+    credentialId: passkey?.id,
     challenge,
     rpId: RP_ID,
   })
-  const { x, y } = toCoordinates(passkey.publicKey)
-  const ok = WebAuthnP256.verify({
-    challenge,
-    metadata,
-    signature,
-    publicKey: PublicKey.from({ prefix: 4, x, y }),
+  const stored = await postJson<StoredPasskey>('/api/session', {
+    id,
+    signature: {
+      authenticatorData: metadata.authenticatorData,
+      clientDataJSON: metadata.clientDataJSON,
+      r: Hex.fromNumber(signature.r),
+      s: Hex.fromNumber(signature.s),
+    },
   })
-  if (!ok) throw new Error('パスキーの署名を検証できませんでした')
+  savePasskey(stored)
 }
 
-export function startSession() {
-  try {
-    sessionStorage.setItem(SESSION_KEY, '1')
-  } catch {
-    // セッションを保存できなくても、画面の遷移はそのまま続ける
+async function postJson<T>(path: string, body: unknown = {}): Promise<T> {
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const message = await response
+      .json()
+      .then((b: { message?: string }) => b.message)
+      .catch(() => undefined)
+    throw new Error(message || `リクエストに失敗しました（${response.status}）`)
   }
+  return (await response.json()) as T
 }
 
-export function endSession() {
-  try {
-    sessionStorage.removeItem(SESSION_KEY)
-  } catch {
-    // 何もしない
-  }
+// サーバーのセッションを消してログアウトする。端末のパスキーの情報は、次のログインのために残す
+export async function endSession() {
+  await fetch('/api/session', { method: 'DELETE' })
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, invitations, isNull, members, passkeys } from '@bizzet/db'
 import { error, fail } from '@sveltejs/kit'
+import { setSession } from '$lib/server/session'
 import type { Actions, PageServerLoad } from './$types'
 
 const HEX_64_BYTES = /^0x[0-9a-fA-F]{128}$/
@@ -60,7 +61,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 export const actions: Actions = {
   // ブラウザで作ったパスキーを保存し、招待ならメンバーを作り、追加用リンクなら既存のメンバーに紐づける
-  default: async ({ locals, params, request }) => {
+  default: async ({ cookies, locals, params, request }) => {
     const db = locals.db
     const invitation = await findOpenInvitation(db, params.token)
     if (invitation.kind === 'add_password') {
@@ -164,6 +165,8 @@ export const actions: Actions = {
       })
     }
 
+    // 登録したパスキーは、いま作った端末が持っているため、そのままログインさせる
+    setSession(cookies, id)
     // リダイレクトせずに同じ画面で完了を伝える
     return { completed: true }
   },

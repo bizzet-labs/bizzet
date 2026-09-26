@@ -1,13 +1,12 @@
 import { error, json } from '@sveltejs/kit'
 import type { Hex } from 'viem'
 import { addSignature } from '$lib/server/approvals'
-import { findMemberByPasskey } from '$lib/server/member'
+import { requireMember } from '$lib/server/member'
 import type { RequestHandler } from './$types'
 
 const HEX = /^0x[0-9a-fA-F]+$/
 
 type Body = {
-  passkeyId?: unknown
   signature?: {
     authenticatorData?: unknown
     clientDataJSON?: unknown
@@ -18,11 +17,8 @@ type Body = {
 
 // SafeTx のハッシュへのパスキーの署名を受け取り、検証してから保存する
 export const POST: RequestHandler = async ({ locals, params, request }) => {
-  const { passkeyId, signature } = (await request.json()) as Body
-  const { member, passkey, group } = await findMemberByPasskey(
-    locals.db,
-    passkeyId,
-  )
+  const { signature } = (await request.json()) as Body
+  const { member, passkey, group } = await requireMember(locals)
   const { authenticatorData, clientDataJSON, r, s } = signature ?? {}
   if (
     typeof authenticatorData !== 'string' ||

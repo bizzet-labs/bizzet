@@ -1,19 +1,25 @@
 import { Hex, WebAuthnP256 } from 'ox'
 import type { Address } from 'viem'
+import { goto } from '$app/navigation'
 import { RP_ID, type StoredPasskey } from './passkey.js'
 import { sendPasskeyTransaction } from './user-operation.js'
 
-// ウォレットのサーバーの API を、この端末のパスキーのクレデンシャル ID を添えて呼ぶ
+// ウォレットのサーバーの API を呼ぶ。メンバーはサーバーがセッションの Cookie から決めるため、
+// passkey は呼び出し側との互換のために受け取るだけで送らない
 export async function callApi<T>(
   path: string,
-  passkey: StoredPasskey,
+  _passkey: StoredPasskey | null,
   body: Record<string, unknown> = {},
 ): Promise<T> {
   const response = await fetch(path, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ passkeyId: passkey.id, ...body }),
+    body: JSON.stringify(body),
   })
+  // セッションが切れていれば、ログインし直してもらう
+  if (response.status === 401) {
+    await goto('/login')
+  }
   if (!response.ok) {
     const message = await response
       .json()

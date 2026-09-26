@@ -5,7 +5,6 @@ import { onMount } from 'svelte'
 import { formatUnits } from 'viem'
 import { callApi } from '@/approvals.js'
 import * as Card from '@/components/ui/card/index.js'
-import { loadPasskey } from '@/passkey.js'
 
 type Home = {
   member: { name: string | null; email: string; role: string }
@@ -26,14 +25,8 @@ let home = $state<Home | null>(null)
 let error = $state('')
 
 onMount(async () => {
-  const passkey = loadPasskey()
-  if (!passkey) {
-    error =
-      'この端末にパスキーがありません。招待か追加用のリンクから登録してください'
-    return
-  }
   try {
-    home = await callApi<Home>('/api/home', passkey)
+    home = await callApi<Home>('/api/home', null)
   } catch (e) {
     console.error(e)
     error = e instanceof Error ? e.message : '読み込めませんでした'

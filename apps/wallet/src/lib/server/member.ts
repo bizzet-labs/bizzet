@@ -5,11 +5,14 @@ export type Member = typeof members.$inferSelect
 export type Group = typeof groups.$inferSelect
 export type Passkey = typeof passkeys.$inferSelect
 
-// 仮置き：ウォレットはまだサーバーのセッションを持たないため、端末に保存したパスキーのクレデンシャル ID で
-// メンバーを引く。ログインをサーバーで検証する時点で、セッションから引く形に置き換える。
+// ログインしたセッションのメンバー。ウォレットの API は、リクエストの中身ではなく必ずこれでメンバーを引く。
 // 署名を受け付ける処理では、別途パスキーの署名そのものを保存した公開鍵で確かめる
-export async function findMemberByPasskey(db: Db, passkeyId: unknown) {
-  if (typeof passkeyId !== 'string' || !passkeyId) error(401)
+export function requireMember(locals: App.Locals) {
+  if (!locals.passkeyId) error(401, 'ログインしてください')
+  return findMemberByPasskey(locals.db, locals.passkeyId)
+}
+
+async function findMemberByPasskey(db: Db, passkeyId: string) {
   const passkey = await db.query.passkeys.findFirst({
     where: eq(passkeys.id, passkeyId),
   })
