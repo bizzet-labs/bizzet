@@ -1,0 +1,279 @@
+.figure {
+  --wallet-gap: 1rem;
+  --wallet-tint: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  margin: 2rem 0;
+  font-size: 0.8rem;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* DeploymentDiagram */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--wallet-gap);
+  align-self: stretch;
+}
+
+.member {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 0.75rem;
+  background: var(--ifm-background-surface-color);
+  text-align: center;
+}
+
+.memberIcon {
+  display: flex;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.memberTitle {
+  font-size: 0.95rem;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.chip {
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-emphasis-800);
+  font-size: 0.72rem;
+}
+
+.signer {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ifm-color-primary);
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+/* bracket joining the two cards above */
+.merge,
+.split {
+  align-self: stretch;
+  height: 1rem;
+  margin: 0 calc(25% - var(--wallet-gap) / 4);
+  border: 2px solid var(--ifm-color-primary);
+}
+
+.merge {
+  border-top: 0;
+  border-radius: 0 0 0.6rem 0.6rem;
+}
+
+.split {
+  border-bottom: 0;
+  border-radius: 0.6rem 0.6rem 0 0;
+}
+
+.arrow {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 2.25rem;
+}
+
+.arrowLine,
+.line {
+  position: relative;
+  width: 2px;
+  background: var(--ifm-color-primary);
+}
+
+.arrowLine::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--ifm-color-primary);
+  border-bottom: 2px solid var(--ifm-color-primary);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.arrowLabel {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 0.6rem);
+  transform: translateY(-50%);
+  color: var(--ifm-color-primary);
+  font-size: 0.85rem;
+  font-weight: var(--ifm-font-weight-bold);
+  white-space: nowrap;
+}
+
+/* arrowheads at the bottom of both legs of the split bracket */
+.split {
+  position: relative;
+  margin-bottom: 0.35rem;
+}
+
+.split::before,
+.split::after {
+  content: "";
+  position: absolute;
+  bottom: -0.1rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--ifm-color-primary);
+  border-bottom: 2px solid var(--ifm-color-primary);
+}
+
+.split::before {
+  left: -1px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.split::after {
+  right: -1px;
+  transform: translateX(50%) rotate(45deg);
+}
+
+.safe,
+.safeHq {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--ifm-color-primary);
+  border-radius: 0.75rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.safeHq {
+  min-width: 60%;
+  background: var(--wallet-tint);
+}
+
+.safeName {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.95rem;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.threshold {
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: var(--ifm-color-primary);
+  color: var(--ifm-color-white);
+  font-size: 0.72rem;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.viewer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: stretch;
+  justify-content: center;
+  margin-top: var(--wallet-gap);
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed var(--ifm-color-emphasis-400);
+  border-radius: 0.75rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+/* ArchitectureDiagram */
+
+.scroll {
+  overflow-x: auto;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  min-width: 720px;
+  height: auto;
+  font-size: 12px;
+}
+
+.lane {
+  fill: var(--ifm-color-emphasis-100);
+  stroke: var(--ifm-color-emphasis-200);
+}
+
+.laneLabel {
+  fill: var(--ifm-color-emphasis-700);
+  font-size: 12px;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.box,
+.boxStrong {
+  fill: var(--ifm-background-surface-color);
+  stroke: var(--ifm-color-emphasis-400);
+}
+
+.boxStrong {
+  fill: var(--ifm-background-surface-color);
+  stroke: var(--ifm-color-primary);
+  stroke-width: 2;
+}
+
+.boxTitle,
+.boxTitleStrong {
+  fill: var(--ifm-color-emphasis-900);
+  font-size: 13px;
+  font-weight: var(--ifm-font-weight-bold);
+  text-anchor: middle;
+}
+
+.boxTitleStrong {
+  fill: var(--ifm-color-primary);
+}
+
+.boxLine {
+  fill: var(--ifm-color-emphasis-800);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--ifm-color-primary);
+  stroke-width: 1.8;
+}
+
+.arrowHead {
+  fill: var(--ifm-color-primary);
+}
+
+.edgeLabel {
+  fill: var(--ifm-color-primary);
+  font-size: 11px;
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+@media (max-width: 640px) {
+  .figure {
+    --wallet-gap: 0.5rem;
+  }
+
+  .arrowLabel {
+    font-size: 0.75rem;
+  }
+}
