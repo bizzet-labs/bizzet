@@ -1,12 +1,12 @@
 import { error, json } from '@sveltejs/kit'
-import { findMemberByPasskey } from '$lib/server/member'
+import { requireMember } from '$lib/server/member'
 import { createRefund } from '$lib/server/refunds'
 import type { RequestHandler } from './$types'
 
 // 返金の申請（W-03）。ロールを問わず、店舗のメンバーなら自分の店舗の Safe からの出金の提案を作れる
 export const POST: RequestHandler = async ({ locals, request }) => {
   const body = (await request.json()) as Record<string, unknown>
-  const { member, group } = await findMemberByPasskey(locals.db, body.passkeyId)
+  const { member, group } = await requireMember(locals)
   if (group.kind !== 'store') {
     error(403, '返金は店舗のメンバーが申請します')
   }

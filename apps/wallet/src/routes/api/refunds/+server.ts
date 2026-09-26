@@ -1,6 +1,6 @@
 import { tokens } from '@bizzet/contracts'
 import { json } from '@sveltejs/kit'
-import { findMemberByPasskey } from '$lib/server/member'
+import { requireMember } from '$lib/server/member'
 import {
   getRequiredApprovals,
   listRefunds,
@@ -9,9 +9,8 @@ import {
 import type { RequestHandler } from './$types'
 
 // 返金（WS-04）に出す、店舗の出金の提案と申請に要る情報。返金を申請できるのは店舗のメンバーだけ
-export const POST: RequestHandler = async ({ locals, request }) => {
-  const { passkeyId } = (await request.json()) as { passkeyId?: unknown }
-  const { group } = await findMemberByPasskey(locals.db, passkeyId)
+export const POST: RequestHandler = async ({ locals }) => {
+  const { group } = await requireMember(locals)
   const isStore = group.kind === 'store'
   return json({
     group: {
