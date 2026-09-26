@@ -1,8 +1,8 @@
 ---
 theme: default
-title: bizzet ピッチ（3分）
+title: bizzet ピッチ
 info: |
-  ETHGlobal Tokyo 2026 ピッチ動画アウトライン（3分/180秒）
+  ETHGlobal Tokyo 2026 ピッチ資料
 class: text-center
 highlighter: shiki
 transition: fade
@@ -12,7 +12,7 @@ mdc: true
 # bizzet
 ### ビジネスのための、ウォレット。
 
-<div class="pt-8 opacity-70 text-sm">ETHGlobal Tokyo 2026</div>
+<div class="opacity-60">ETHGlobal Tokyo 2026</div>
 
 <!--
 全体で180秒。課題20s→解決策20s→デモ100s→技術的な工夫30s→結果としめ10s。
@@ -21,80 +21,87 @@ mdc: true
 ---
 
 # 課題
-<TimeChip from="0:00" to="0:20" :seconds="20" />
 
-<div class="mt-8 text-lg leading-relaxed">
+### UX の前に、業務が対応していない
 
-- ウォレットは<b>個人向けばかり</b>で、ビジネスが暗号資産で売上を受け取り、管理する仕組みがない
-- 決済代行を挟めば審査と手数料がかかり、個人向けウォレットには<b>「誰が出金できるか」という概念がない</b>
+<div class="leading-relaxed">
+
+- 「UX が Web3 普及の最大の壁」という論調が広がっている
+- しかし **MetaMask** など個人向けウォレットは、そもそも<b>複数人での運用・承認フロー</b>を持たない
+- 決済代行を挟めば審査と手数料がかかり、「誰が出金できるか」という概念がない
 
 </div>
 
-<!-- 画面：課題を一言で示すタイトルスライド（決済代行の図に×、個人ウォレットに×） -->
+<!-- 話す：日本で複数のWeb3事業に携わる中で感じたのは、UXが壁だからではなく、企業が今のままの業務ではウォレットを使えないという、もっと手前の課題。MetaMaskのような個人向けウォレットには複数人での運用や承認フローがなく、そもそも業務に向いていない。 -->
 
 ---
 
 # 解決策
-<TimeChip from="0:20" to="0:40" :seconds="20" />
 
-<div class="mt-4 text-lg leading-relaxed">
+## bizzet：ビジネスのための、ウォレット。
 
-**bizzet**：「ビジネスのための、ウォレット」
+<div class="leading-relaxed">
 
-- 客の支払いは店舗のウォレットに直接入り、売上は本部のウォレットに集まる
-- 本部・店舗のグループ、Owner・Approver・Viewer のロール、出金の2人承認、ENS での受取先の一元管理
+個人向けウォレットにない<b>「複数人運用・ロール・承認フロー」</b>を標準搭載
 
 </div>
 
 <FlowDiagram />
 
----
+<div class="leading-relaxed">
 
-# デモ①：客の支払い
-<TimeChip from="0:40" to="1:20" :seconds="40" />
-
-<div class="mt-8 text-lg leading-relaxed">
-
-1. 値札の QR を読み、決済ページ（`/pay/[name]`）を開く <span class="opacity-50 text-sm">(P-02)</span>
-2. 店舗の ENS の名前（例 `shibuya.bizzet.eth`）を Universal Resolver で解決し、受取先と受け取る通貨（JPYC / USDC）を表示 <span class="opacity-50 text-sm">(P-06)</span>
-3. 客のウォレットから ERC-20 を送り、「処理中」→「済」に切り替わる <span class="opacity-50 text-sm">(P-04)</span>
+グループ／ロール（Owner・Approver・Viewer）／2人承認／ENS での受取先の一元管理
 
 </div>
 
-<!-- 画面：実機（または画面録画）でのクリック操作。値札のQR→決済ページ→送金→「済」まで通す。 -->
+<!-- 話す：個人向けウォレットにない、複数人での運用と承認フローを標準で備えたのがbizzet。客の支払いは店舗のウォレットに直接入り、売上は本部に集まる。グループとロールで権限を分け、出金には2人の承認、受取先はENSで一元管理する。 -->
+
+---
+
+# デモ①：客の支払い
+
+<div class="leading-relaxed">
+
+1. 値札の QR を読み、決済ページを開く
+2. 店舗の ENS の名前を解決し、受取先と受け取る通貨を表示
+3. ウォレットから送金すると、「処理中」→「済」に切り替わる
+
+</div>
+
+<!-- 話す：値札のQRを読むと決済ページが開く。店舗のENSの名前をUniversal Resolverで解決し、受け取る通貨と宛先を表示。客のウォレットから送ると、支払いが「処理中」から「済」に切り替わる。 -->
 
 ---
 
 # デモ②：事業者の運用
-<TimeChip from="1:20" to="2:20" :seconds="60" />
 
-<div class="mt-6 text-base leading-relaxed">
+<div class="leading-relaxed text-[0.85em]">
 
-1. グループ一覧で店舗の ENS 名・Safe の状態・残高を確認 <span class="opacity-50 text-sm">(D-11 / DS-11)</span>
-2. 店舗を1つ追加し、Safe の設定と ENS への登録が進む様子を見せる <span class="opacity-50 text-sm">(D-07 / DS-12)</span>
-3. メンバーを追加し、グループとロール（Owner / Approver / Viewer）を割り当てる <span class="opacity-50 text-sm">(D-05 / DS-06,07)</span>
-4. 出金を作成し、ウォレットでパスキーの署名を求める <span class="opacity-50 text-sm">(D-04,09 / DS-09, WS-06)</span>
-5. 2人目の承認で `execTransaction` が実行され、出金が完了する <span class="opacity-50 text-sm">(W-04, W-05)</span>
+1. グループ一覧で店舗の ENS 名・Safe の状態・残高を確認
+2. 店舗を追加し、Safe の設定と ENS への登録を実行
+3. メンバーを追加し、グループとロールを割り当てる
+4. 出金を作成し、ウォレットでパスキーの署名を求める
+5. 2人目の承認で出金が実行される
 
 </div>
 
-<!-- テストデータでの通しがすでに動くため、台本どおりに操作する。 -->
+<!-- 話す：ダッシュボードでは店舗ごとのENS名やSafeの状態、残高を確認できる。店舗を追加すると、SafeとENSの登録が自動で進む。メンバーを追加してロールを割り当て、出金を作成すると、ウォレットでパスキーの署名を求められる。2人目が承認すると、オンチェーンで出金が実行される。 -->
 
 ---
 
 # 技術的な工夫
-<TimeChip from="2:20" to="2:50" :seconds="30" />
 
-<div class="mt-6 text-base leading-relaxed">
+### 複数人運用を安全に成立させる工夫
 
-- Safe の SDK を使わず、Safe4337Module の設定・パスキー署名者の作成・オーナー設定を1つの `setup()` にまとめ、Safe を<b>1トランザクションで</b>立ち上げる（EIP-712 `SafeOp` も自前実装）
-- <b>パスキー（WebAuthn / P-256）がそのまま Safe のオーナーになる</b>。秘密鍵は誰も持たず、ガス代は ERC-4337 の Paymaster が肩代わり
-- ENSv2 の<b>リソース単位のロール</b>で受取先レコードを書ける鍵を絞り、店舗の名前1つの書き換えで全チャネルの受取先が変わる
-- Roles v2 で、将来の自動ブリッジのキーパー権限を「本部の Safe への送金だけ」に固定し、盗まれても資金に届かない設計
+<div class="leading-relaxed text-[0.85em]">
+
+- Safe4337Module の設定・パスキー署名者の作成を<b>1トランザクション</b>にまとめる
+- <b>パスキーがそのまま Safe のオーナーに</b>。秘密鍵は誰も持たない
+- ENSv2 の<b>リソース単位のロール</b>で受取先レコードの書き手を絞る
+- キーパー権限を「本部の Safe への送金だけ」に固定し、盗まれても資金に届かない
 
 </div>
 
-<!-- 画面：実際に Sepolia で送信した UserOperation のトランザクションハッシュ（Etherscanの画面） -->
+<!-- 話す：この複数人運用を、使いやすく安全に成立させているのが裏側の工夫。SafeのSDKを使わず、Safe4337Moduleとパスキー署名者の設定を1つのトランザクションにまとめている。パスキーがそのままSafeのオーナーになるので、秘密鍵は誰も持たない。ENSv2のリソース単位のロールで受取先を一元管理し、将来の自動ブリッジもキーパーの権限を送金先1つに固定して安全に保っている。 -->
 
 ---
 layout: center
@@ -102,25 +109,26 @@ class: text-center
 ---
 
 # 結果としめ
-<TimeChip from="2:50" to="3:00" :seconds="10" />
 
-<div class="mt-8 text-lg leading-relaxed">
+<div class="leading-relaxed">
 
-vitest 32件・コントラクトのフォークテスト13件がすべて通過<br />
-パスキーでの実際の Sepolia への送信も確認済み
+個人向けウォレットにない複数人運用を、<br />
+<b>実際に動くところまで実装</b>
 
-<div class="mt-6 opacity-70 text-base">
-次は Checkout コントラクトでの決済時の交換と、<br />
-ゼロ知識証明を使ったレシート（買った記録による割引）に取り組む
 </div>
 
-<div class="mt-10 text-2xl">
+<div class="opacity-70 text-[0.7em]">
+vitest 32件・フォークテスト13件がすべて通過<br />
+Sepolia での実送信も確認済み
+</div>
+
+<div class="text-[1.3em]">
 bizzet ― ビジネスのための、ウォレット。
 </div>
 
-</div>
-
 <!--
+話す：個人向けウォレットにはない複数人運用を、実際にSepoliaでの送信まで動くところまで作った。bizzet、ビジネスのための、ウォレット。
+
 メモ・確認事項（発表者ノート、録画には映さない）
 - デモで使う店舗名・金額・メンバー名を確定する
 - Sepolia のテストデータ（Safe・メンバー・招待）を録画前にリセットして用意する

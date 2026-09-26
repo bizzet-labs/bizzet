@@ -1,0 +1,64 @@
+/* Slidev がすべてのスライドに自動で読み込むグローバル CSS。
+   ピッチ資料らしい大きめの文字サイズ・太い見出し・ゆとりのある余白に揃える */
+
+:root {
+  --slidev-theme-primary: #4f46e5;
+}
+
+.slidev-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 1.45em;
+  line-height: 1.6;
+  padding: 3rem 4.5rem;
+}
+
+.slidev-layout h1 {
+  font-size: 2.6em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.2em;
+}
+
+.slidev-layout h2 {
+  font-size: 2em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.3em;
+}
+
+.slidev-layout h3 {
+  font-size: 1.15em;
+  font-weight: 700;
+  opacity: 0.8;
+  margin-bottom: 0.4em;
+}
+
+/* 見出しの直後に来るブロックは詰め、それ以外の直下の要素同士は
+   ゆとりを持って並べる（マークダウン側で毎回 mt-* を書かなくて済むように） */
+.slidev-layout h1 + *,
+.slidev-layout h2 + * {
+  margin-top: 0;
+}
+
+.slidev-layout > :not(h1):not(h2) + :not(h1):not(h2) {
+  margin-top: 1em;
+}
+
+.slidev-layout ul,
+.slidev-layout ol {
+  padding-left: 1.2em;
+}
+
+.slidev-layout li {
+  margin-bottom: 0.55em;
+}
+
+.slidev-layout li > b {
+  color: var(--slidev-theme-primary);
+}
+
+.slidev-layout code {
+  font-size: 0.85em;
+}
