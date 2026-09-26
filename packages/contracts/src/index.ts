@@ -9,6 +9,7 @@ export {
   resolveGroupName,
 } from './ens.ts'
 export {
+  EIP1271_MAGIC_VALUE,
   encodeCreateSigner,
   type PasskeyPublicKey,
   signerFactoryAbi,
@@ -35,12 +36,14 @@ export {
 export {
   encodeAddOwner,
   encodeErc20Transfer,
+  encodeExecTransaction,
   encodeRemoveOwner,
   erc20Abi,
   findToken,
   hashSafeTransaction,
   type SafeTransactionData,
   SENTINEL_OWNERS,
+  safeExecutionEventsAbi,
   safeOwnerAbi,
   type TokenSymbol,
   tokens,

@@ -21,6 +21,12 @@ export const safeOwnerAbi = parseAbi([
   'function execTransaction(address to, uint256 value, bytes data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures) payable returns (bool success)',
 ])
 
+// execTransaction の結果。Safe は成否をイベントで返し、失敗しても取引自体は通ることがあるため、イベントで確かめる
+export const safeExecutionEventsAbi = parseAbi([
+  'event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)',
+  'event ExecutionFailure(bytes32 indexed txHash, uint256 payment)',
+])
+
 export const erc20Abi = parseAbi([
   'function transfer(address to, uint256 amount) returns (bool)',
   'function balanceOf(address owner) view returns (uint256)',
@@ -110,5 +116,29 @@ export function encodeRemoveOwner(
     abi: safeOwnerAbi,
     functionName: 'removeOwner',
     args: [prevOwner, owner, threshold],
+  })
+}
+
+// 署名のそろった SafeTx を実行する calldata。signatures は encodeSafeSignatures で並べたもの。
+// 払い戻しの項目は hashSafeTransaction と同じくすべて 0 にする
+export function encodeExecTransaction(
+  tx: SafeTransactionData,
+  signatures: Hex,
+) {
+  return encodeFunctionData({
+    abi: safeOwnerAbi,
+    functionName: 'execTransaction',
+    args: [
+      tx.to,
+      tx.value,
+      tx.data,
+      tx.operation,
+      0n,
+      0n,
+      0n,
+      zeroAddress,
+      zeroAddress,
+      signatures,
+    ],
   })
 }
