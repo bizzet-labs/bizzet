@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto'
 import {
   sepolia as addresses,
   hashSafeTransaction,
+  isDeployed as isContractDeployed,
   predictSafeAddress,
   proxyFactoryAbi,
-  safeOwnerAbi,
+  readSafeNonce,
 } from '@bizzet/contracts'
 import { and, type Db, eq, groups, inArray, safeTransactions } from '@bizzet/db'
 import { type Address, getAddress, type Hex } from 'viem'
@@ -35,22 +36,15 @@ export async function computeGroupSafeAddress(
   )
 }
 
-export async function isDeployed(address: Address) {
-  const code = await publicClient.getCode({ address })
-  return code !== undefined && code !== '0x'
+export function isDeployed(address: Address) {
+  return isContractDeployed(publicClient, address)
 }
 
 // Safe のノンスを割り当てる。チェーン上のノンス（未配置なら 0）以上で、送信前・送信済みの提案が
 // まだ使っていない最小の番号を使う。却下で空いた番号は次の提案が埋めるため、後ろの提案は署名を
 // やり直さずに済み、空いた番号の提案が実行されるのを待つだけになる
 export async function nextSafeNonce(db: Db, safe: Address) {
-  const onchain = (await isDeployed(safe))
-    ? await publicClient.readContract({
-        address: safe,
-        abi: safeOwnerAbi,
-        functionName: 'nonce',
-      })
-    : 0n
+  const onchain = await readSafeNonce(publicClient, safe)
   const pending = await db.query.safeTransactions.findMany({
     where: and(
       eq(safeTransactions.safeAddress, safe.toLowerCase()),
