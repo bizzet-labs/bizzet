@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   index,
@@ -18,23 +18,30 @@ export const groupKind = pgEnum('group_kind', ['headquarters', 'store'])
 export const memberRole = pgEnum('member_role', ['owner', 'approver', 'viewer'])
 
 // 本部と店舗のグループ。グループごとに Safe を1つ持つ
-export const groups = pgTable('groups', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  kind: groupKind('kind').notNull(),
-  // 確定した Safe のアドレス。設定を確定するまでは null
-  safeAddress: text('safe_address').unique(),
-  // Safe の作成時の設定。アドレスはこの設定から CREATE2 で決まる。
-  // オーナーは Safe の getOwners() と同じ並び（オーナーの変更が実行されたら更新する）
-  safeOwners: jsonb('safe_owners').$type<string[]>(),
-  safeThreshold: integer('safe_threshold'),
-  safeSaltNonce: text('safe_salt_nonce'),
-  // Safe をチェーンに配置した日時。配置前は null
-  safeDeployedAt: timestamp('safe_deployed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+export const groups = pgTable(
+  'groups',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    kind: groupKind('kind').notNull(),
+    // 確定した Safe のアドレス。設定を確定するまでは null
+    safeAddress: text('safe_address').unique(),
+    // Safe の作成時の設定。アドレスはこの設定から CREATE2 で決まる。
+    // オーナーは Safe の getOwners() と同じ並び（オーナーの変更が実行されたら更新する）
+    safeOwners: jsonb('safe_owners').$type<string[]>(),
+    safeThreshold: integer('safe_threshold'),
+    safeSaltNonce: text('safe_salt_nonce'),
+    // Safe をチェーンに配置した日時。配置前は null
+    safeDeployedAt: timestamp('safe_deployed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // グループの名前は、大文字と小文字を区別せずに重複させない。同時に2つ作られても片方だけが通る
+    uniqueIndex('groups_name_lower_idx').on(sql`lower(${table.name})`),
+  ],
+)
 
 // パスキーと、Safe のオーナーになる署名者の対応表。
 // ログイン時の WebAuthn の応答には公開鍵が含まれないため、登録時にここへ保存する

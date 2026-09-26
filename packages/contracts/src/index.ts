@@ -6,6 +6,15 @@ export {
   verifiers,
 } from './passkey.ts'
 export {
+  encodeRolesSetup,
+  moduleProxyFactoryAbi,
+  predictRolesAddress,
+  type RolesSetup,
+  rolesAbi,
+  SWEEP_ROLE_KEY,
+  safeModuleAbi,
+} from './roles.ts'
+export {
   encodeCreateSafe,
   encodeMultiSend,
   encodeSafeInitializer,

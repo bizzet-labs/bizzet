@@ -36,6 +36,13 @@
       "when": 1790452637089,
       "tag": "0004_handy_vengeance",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790453991890,
+      "tag": "0005_smooth_solo",
+      "breakpoints": true
     }
   ]
 }
