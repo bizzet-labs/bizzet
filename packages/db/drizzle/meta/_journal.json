@@ -15,6 +15,13 @@
       "when": 1790415405794,
       "tag": "0001_rich_bloodaxe",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790423861480,
+      "tag": "0002_legal_boomer",
+      "breakpoints": true
     }
   ]
 }

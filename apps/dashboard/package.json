@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@bizzet/db": "workspace:*",
+    "better-auth": "1.7.5",
     "ox": "^0.14.45"
   }
 }

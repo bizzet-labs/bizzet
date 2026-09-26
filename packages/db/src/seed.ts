@@ -1,16 +1,22 @@
-import { randomBytes, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
+import { createAuth, normalizeEmail } from './auth.ts'
 import { createDb, LOCAL_DATABASE_URL } from './client.ts'
-import { groups, invitations } from './schema.ts'
+import { groups, members } from './schema.ts'
 
-// 初期セットアップ。メンバーが1人もいないときだけ、本部のグループと最初の Owner への招待を作る
-// 使い方：BOOTSTRAP_EMAIL=owner@example.com pnpm db:seed
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+// 初期セットアップ。メンバーが1人もいないときだけ、本部のグループと最初の Owner を作る
+// 使い方：pnpm db:seed（BOOTSTRAP_EMAIL / BOOTSTRAP_PASSWORD で上書き可）
+const DEFAULT_EMAIL = 'admin@example.com'
+const DEFAULT_PASSWORD = 'password'
 
 async function main() {
-  const email = process.env.BOOTSTRAP_EMAIL
-  if (!email) throw new Error('BOOTSTRAP_EMAIL を指定してください')
+  const email = normalizeEmail(process.env.BOOTSTRAP_EMAIL ?? DEFAULT_EMAIL)
+  const password = process.env.BOOTSTRAP_PASSWORD ?? DEFAULT_PASSWORD
 
   const db = createDb(process.env.DATABASE_URL ?? LOCAL_DATABASE_URL)
+  const auth = createAuth(db, {
+    baseURL: process.env.DASHBOARD_URL ?? 'http://localhost:5174',
+    secret: process.env.BETTER_AUTH_SECRET,
+  })
 
   const existing = await db.query.members.findFirst()
   if (existing)
@@ -30,17 +36,18 @@ async function main() {
   }
   if (!hq) throw new Error('本部のグループを作成できませんでした')
 
-  const token = randomBytes(32).toString('base64url')
-  await db.insert(invitations).values({
-    token,
+  const { user } = await auth.api.signUpEmail({
+    body: { name: email, email, password },
+  })
+  await db.insert(members).values({
+    id: randomUUID(),
     email,
     groupId: hq.id,
     role: 'owner',
-    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+    userId: user.id,
   })
 
-  const walletUrl = process.env.WALLET_URL ?? 'http://localhost:5175'
-  console.log(`招待リンク（7日間有効）: ${walletUrl}/invite/${token}`)
+  console.log(`Owner を作成しました: ${email} / ${password}`)
 }
 
 main().catch((e) => {
