@@ -16,6 +16,10 @@ const hq = {
   safeThreshold: 2,
   safeSaltNonce: '0',
   safeDeployedAt: null,
+  ensLabel: null,
+  receivingCurrency: 'JPYC',
+  ensStatus: 'unregistered',
+  ensTxHash: null,
   createdAt: new Date(),
 } satisfies Group
 
