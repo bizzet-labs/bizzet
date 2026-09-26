@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge/index.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
 import { enhance } from '$app/forms'
+import { explorerTxUrl } from '$lib/explorer'
 import { formatDateTime } from '$lib/format'
 import { m } from '$lib/paraglide/messages.js'
 import { getLocale } from '$lib/paraglide/runtime'
@@ -68,7 +69,7 @@ function proposalStatusLabel(status: string, signatureCount: number) {
 			<Alert.Title>{m.groups_safe_deployed_done()}</Alert.Title>
 			<Alert.Description>
 				<a
-					href="https://sepolia.etherscan.io/tx/{form.txHash}"
+					href={explorerTxUrl(form.txHash)}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="underline underline-offset-4"
