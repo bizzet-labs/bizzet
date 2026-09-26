@@ -15,7 +15,7 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://bizzet-labs.github.io',
+  url: 'https://bizzet-docs.vercel.app',
   baseUrl: '/',
 
   // GitHub pages deployment config.
