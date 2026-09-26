@@ -2,13 +2,30 @@
 import BanknoteArrowDownIcon from '@lucide/svelte/icons/banknote-arrow-down'
 import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
 import PenLineIcon from '@lucide/svelte/icons/pen-line'
+import { onMount } from 'svelte'
+import { callApi } from '@/approvals.js'
 import * as Card from '@/components/ui/card/index.js'
+import { loadPasskey } from '@/passkey.js'
 
-// 承認は本部の Owner と Approver 向け。それ以外のメンバーには承認の画面でその旨を出す
-const menuItems = [
+// 返金はすべてのメンバー、承認は本部の Owner と Approver 向け
+let canSign = $state(false)
+
+onMount(async () => {
+  const passkey = loadPasskey()
+  if (!passkey) return
+  try {
+    ;({ canSign } = await callApi<{ canSign: boolean }>('/api/me', passkey))
+  } catch (e) {
+    console.error(e)
+  }
+})
+
+const menuItems = $derived([
   { href: '/business/refund', label: '返金', icon: BanknoteArrowDownIcon },
-  { href: '/business/approvals', label: '承認', icon: PenLineIcon },
-]
+  ...(canSign
+    ? [{ href: '/business/approvals', label: '承認', icon: PenLineIcon }]
+    : []),
+])
 </script>
 
 <svelte:head>
