@@ -6,11 +6,7 @@
 
 bizzet is a wallet built for business operations, from receiving sales to managing team funds, with passkey sign-in and multi-member approval on Safe.
 
-This README separates what we built during ETHGlobal Tokyo 2026 from what is only designed. The product description below is the vision; the "What we built" section lists only what exists in this repo and how we verified it.
-
 ## Problem and product vision
-
-> This section describes the product vision. Most of it is not built yet; see "What we built" and "Not built yet" below.
 
 A business that accepts crypto payments has to run it as a team: sales arrive at several stores, funds need to be gathered at headquarters, and withdrawals should require more than one person's approval. Ordinary wallets assume a single person holding a seed phrase, which does not fit how a business operates.
 
@@ -31,6 +27,7 @@ Everything here runs on Ethereum Sepolia only.
 | EIP-712 hashing for Safe4337 SafeOp and Safe v1.4.1 SafeTx | Fork tests against deployed contracts |
 | Passkey (WebAuthn) signature encoding and the viem smart account `toSafePasskeyAccount` | Fork test: passkey-signed UserOperation executed via EntryPoint `handleOps` |
 | ERC-20 transfer and owner-change encoders | Used by the dashboard's proposals; not executed on chain yet |
+| Nested store Safe approval (`hashNestedSafeTransaction`, `encodeNestedSafeSignature`): HQ owners sign the HQ Safe's SafeMessage over the store SafeTx's raw EIP-712 bytes (`0x1901 ‖ domainSeparator ‖ structHash`), wrapped as the HQ Safe's contract signature (nested ERC-1271) | Fork tests (`test/store-safe-approval.ts`): two HQ owners execute a store `execTransaction`; one signature, or a signature over the wrong message, is rejected |
 | Zodiac Roles v2 setup encoding (deploy via ModuleProxyFactory, scope a keeper to JPYC/USDC `transfer` to the HQ Safe only, enable the module) in one MultiSendCallOnly delegatecall | Fork test: keeper can transfer only to the HQ Safe; other recipients and functions are rejected |
 | `execTransaction` encoding and passkey signature checks via the signer factory's `isValidSignatureForSigner` | Fork test: two passkey owners' signatures deploy the HQ Safe and execute a payout in one UserOperation; one signature is rejected |
 | ENSv2 on Sepolia: HQ `.eth` registration (commit/register with MockUSDC), a subname registry and PermissionedResolver deployed via VerifiableFactory, store subnames, `addr` + `bizzet.currency` + `description` records in one multicall, and `resolveGroupName` through UniversalResolverV2 | Fork tests: register, re-run idempotently, write records and resolve them through the Universal Resolver |
@@ -38,7 +35,7 @@ Everything here runs on Ethereum Sepolia only.
 | Uniswap v4 on Sepolia (`src/uniswap.ts`): V4Quoter exact-output quotes, Universal Router `V4_SWAP` (SWAP_EXACT_OUT_SINGLE + SETTLE_ALL + TAKE to the store Safe), Permit2 approvals, and full-range liquidity via PositionManager | Fork tests (`test/uniswap.ts`): add liquidity, swap JPYC→USDC and USDC→JPYC exact-out; the recipient gets exactly the amount and the quote matches what was paid |
 | `uniswap:liquidity` script that adds full-range JPYC/USDC liquidity to the Sepolia pool | Same code path as the fork tests; not yet run on live Sepolia |
 
-The 16 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed UserOperation executed end to end through EntryPoint `handleOps`, deploying the Safe and its signer; group Safe address and SafeTx hash match the deployed Safe; the keeper can only transfer to the HQ Safe; two-passkey approval and execution of an HQ payout; ENSv2 registration, records and resolution; and Uniswap v4 liquidity and exact-output swaps in both directions.
+The 23 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed UserOperation executed end to end through EntryPoint `handleOps`, deploying the Safe and its signer; group Safe address and SafeTx hash match the deployed Safe; the keeper can only transfer to the HQ Safe; two-passkey approval and execution of an HQ payout; nested approval and execution of a store Safe transaction by HQ owners; ENSv2 registration, records and resolution; and Uniswap v4 liquidity and exact-output swaps in both directions.
 
 **Live on Sepolia.** A passkey-signed UserOperation (test P-256 key) was sent through Pimlico's bundler and paymaster via the wallet's server proxy, deploying a Safe and its passkey signer with gas sponsored: [0xe1bfcc21…a6c4](https://sepolia.etherscan.io/tx/0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4).
 
@@ -46,17 +43,18 @@ The 16 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signe
 
 | Built | How it was verified |
 | --- | --- |
-| WebAuthn passkey registration and login (the passkey record is kept in the browser's localStorage) | Manual check in the browser |
+| Server-verified passkey login: `/api/session/challenge` issues a one-time challenge (5 min, signed httpOnly cookie), `/api/session` verifies the WebAuthn assertion against the stored public key (challenge, origin, rpId hash, user verification) and sets a 12h HMAC-signed httpOnly session cookie | vitest for cookie signing and assertion checks; manual check in the browser |
+| Session-based access: wallet APIs identify the member from the session, and pages other than `/login`, `/pay/**` and `/invite/**` redirect to `/login` | Manual check |
 | Signer address computed via the factory's `getSigner` | Manual check; same logic as the fork tests |
-| Invite page that registers a passkey to the DB (member and add-passkey links) | Manual check with links issued by the dashboard |
-| Test Safe creation button that sends a gasless UserOperation via Pimlico | Manual check; the live Sepolia tx above |
+| Invite page that registers a passkey to the DB with the public key sent by the browser (member and add-passkey links) | Manual check with links issued by the dashboard |
 | `/api/bundler` server proxy that keeps the Pimlico API key server-side and forwards only an allowlisted set of methods | Manual check; the live Sepolia tx above |
 | Home: balances of the member's groups (one multicall) and the pending-approval count | API check against a throwaway DB and a dev server |
-| Approval screen: members sign HQ Safe proposals with their passkey; the server recomputes the safeTxHash, checks the signer is an owner and verifies the signature on chain before storing it | API check (wrong hash, wrong key and duplicate signatures are rejected); fork test for the signature format |
-| Execution: once the threshold is met, the last signer submits `execTransaction` through their passkey account and Pimlico; the proposal is marked executed only after an `ExecutionSuccess` log | Fork test; not yet sent on live Sepolia |
+| Approval screen: HQ Owners/Approvers sign HQ Safe proposals, and store Safe proposals via the nested approval, with their passkey; the server recomputes the safeTxHash, checks the signer is an owner and verifies the signature on chain before storing it | API check (wrong hash, wrong key and duplicate signatures are rejected); fork test for the signature format |
+| Execution: once the threshold is met, the last signer submits `execTransaction` through their passkey account (created automatically on first execution) and Pimlico; undeployed group Safes are refused, and the proposal is marked executed only after an `ExecutionSuccess` log | Fork test; not yet sent on live Sepolia |
 | Customer payment page `/pay/<ens-name>`: resolves the store's ENS name to its Safe address and receiving currency, shows the price in yen and JPYC/USDC, pays with the customer's browser wallet (ERC-20 `transfer`, or a Uniswap v4 swap when the customer pays in the other currency, delivered straight to the store Safe), and shows 処理中 then 済 | vitest for price parsing and conversion; page render check; not yet paid from a real wallet |
 | Price-tag page `/pay`: builds the payment URL and a printable QR code | Page render check |
-| Business and my page screens (logout works) | Manual check |
+| Refund requests `/business/refund`: store members request a refund, which becomes a payout proposal on the store Safe marked 返金 | vitest; manual check |
+| My page `/mypage`: issues one-hour add-password links for the dashboard, and logout | vitest; manual check |
 
 ### apps/dashboard
 
@@ -67,6 +65,7 @@ The 16 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signe
 | Owner-set changes of the HQ Safe create `owner_change` proposals, guarded (3+ owners, last Owner, self) | Manual check |
 | Account page issuing a one-hour add-passkey link for the wallet | Manual check |
 | Groups: list, store creation, HQ Safe setup from 3+ passkey owners (threshold 2), store Safe setup, Roles v2 setup proposal | Manual check; encoders covered by fork tests |
+| Safe deployment: "Deploy Safe" on group settings sends `createProxyWithNonce` from the operator key with the saved settings; group Safes are deployed only here | Manual check; not yet run on live Sepolia |
 | Payouts: list, detail and create for Safe transaction proposals (nonce assignment reusing freed nonces), reject, and sync of submitted proposals to executed | Manual check |
 | Home: balances via one multicall | Manual check on Sepolia |
 | Deposit indexer: incremental ERC-20 Transfer ingestion with a time budget, and `/api/cron/deposits` protected by a Bearer token | Manual check |
@@ -74,7 +73,7 @@ The 16 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signe
 | Japanese and English via Paraglide (cookie, then browser language, then ja) and a shadcn sidebar | Manual check |
 | ENS: a label field on store creation that registers `<label>.<hq>.eth` and writes its records, a retry and currency edit on group settings, and the resolved address and currency on group pages with a warning if ENS and the DB disagree | `svelte-check`; registration code covered by the ENS fork tests |
 
-vitest covers helper logic only: the dashboard's 11 tests cover role rules, member-change helpers and group ordering, and the wallet's 37 tests cover passkey public-key parsing, price-tag URL parsing and conversion, swap slippage and approval-step planning, and which proposals a member can sign. Type checks pass for both apps.
+vitest covers helper logic only: the dashboard's 11 tests cover role rules, member-change helpers and group ordering, and the wallet's 65 tests cover passkey public-key parsing, session cookie signing, WebAuthn assertion checks, price-tag URL parsing and conversion, swap slippage and approval-step planning, which proposals a member can sign, refunds and password links. Type checks pass for both apps.
 
 ### packages/db
 
@@ -87,7 +86,9 @@ A Docusaurus whitepaper and design docs in Japanese (18 pages) with no open item
 ## Built but not yet run on live Sepolia
 
 - **ENS setup**: the `ens:setup` script and store subname registration are verified on a Sepolia fork only; the live HQ name has not been registered yet, so `/pay/<name>` shows "no receiving address" until it is.
-- **Payout execution and customer payments**: verified in fork tests and render checks, not yet with a real passkey or a real customer wallet.
+- **Payout execution and customer payments**: HQ and nested store Safe execution are verified in fork tests and render checks, not yet with a real passkey or a real customer wallet.
+- **Safe deployment from the dashboard**: not yet sent on live Sepolia.
+- **Passkey login**: server verification is covered by vitest, but login with a real passkey against the deployed wallet has not been tried yet.
 
 ## Not built yet (designed in docs, planned)
 
@@ -95,10 +96,8 @@ The following are designed in `docs/` but are not implemented in this repo.
 
 - **Checkout contract**: a contract that takes the payment and emits `Paid`, and the e-ink price tag. Today the customer's wallet calls Uniswap's Universal Router directly when a swap is needed.
 - **Receipts**: Semaphore v4 purchase proofs.
-- **Store Safe approvals**: signing store Safe proposals needs HQ owners to sign an HQ Safe message (nested ERC-1271); the approval screen shows these as not signable.
 - **Relayer Safe**: execution currently goes through the last signer's own passkey account instead of a bizzet relayer Safe.
-- **Wallet extras**: refund requests and issuing add-password links.
-- **Server-side passkey verification** at registration, and a server-verified wallet login.
+- **Passkey attestation verification** at registration: the server stores the public key sent by the browser.
 - **Operations**: auto-bridge and CCTP; Gelato keeper deployment and on-chain sweep execution; an automatic owner-add proposal when an HQ member registers a passkey after setup.
 
 ## Uniswap v4 integration
@@ -127,11 +126,12 @@ The beta runs on Ethereum Sepolia only.
 
 | Component | Design | Status |
 | --- | --- | --- |
-| HQ Safe | Safe v1.4.1 with 3+ passkey owners and threshold 2 | Setup built; setup verified in fork tests |
-| Store Safes | Safe whose sole owner is the HQ Safe | Setup built |
-| Member approval | Members sign Safe transactions (EIP-712 SafeTx) with passkeys | Built for HQ Safe proposals; store Safe proposals not signable yet |
+| HQ Safe | Safe v1.4.1 with 3+ passkey owners and threshold 2 | Setup built and fork-tested; deployed from the dashboard |
+| Store Safes | Safe whose sole owner is the HQ Safe | Setup built; deployed from the dashboard |
+| Member approval | Members sign Safe transactions (EIP-712 SafeTx) with passkeys | Built for HQ Safe proposals and store Safe proposals (nested ERC-1271); fork-tested |
 | Relayer | A bizzet relayer Safe with Safe4337Module submits signed transactions via ERC-4337 | Interim: the last signer's passkey account submits `execTransaction` (fork-tested); relayer Safe not built |
 | Gas sponsorship | Pimlico paymaster | Built (server proxy in the wallet) |
+| Safe deployment | The operator key sends `createProxyWithNonce` for group Safes from the dashboard | Built; not run on live Sepolia |
 | Keeper permission | Zodiac Roles v2 scopes a keeper to JPYC/USDC transfers into the HQ Safe only | Encoding built and fork-tested; keeper not deployed |
 | Proposals | Payout, owner change and Safe setup proposals stored in Postgres | Built (creation, reject, sync) |
 | Receiving settings | Each group's ENSv2 name holds its Safe as the `addr` record and its currency as the `bizzet.currency` text record | Built and fork-tested; live setup not run yet |
@@ -175,7 +175,9 @@ The seeded credentials are for local development only.
 | `PIMLICO_API_KEY` | Pimlico bundler/paymaster key, used server-side only |
 | `PUBLIC_PASSKEY_RP_ID` | Optional WebAuthn rpId override |
 | `DATABASE_URL` | Postgres URL shared with the dashboard |
-| `PUBLIC_SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint |
+| `PUBLIC_SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint (default `https://ethereum-sepolia-rpc.publicnode.com`, CORS-enabled) |
+| `WALLET_SESSION_SECRET` | Key that signs session cookies; required in production, dev falls back to a per-process key |
+| `PUBLIC_DASHBOARD_URL` | Dashboard URL used in add-password links (default `http://localhost:5174`) |
 | `PUBLIC_PAY_MOCK_RESOLUTION` | Dev server only: `0xaddress,USDC,name` replaces ENS resolution on the payment page, and the page says so |
 
 `apps/dashboard/.env`
@@ -185,12 +187,12 @@ The seeded credentials are for local development only.
 | `DATABASE_URL` | Postgres URL; empty uses the local DB |
 | `BETTER_AUTH_SECRET` | Better Auth secret |
 | `BETTER_AUTH_URL` | Dashboard base URL |
-| `SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint |
+| `SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint (same default as the wallet) |
 | `KEEPER_ADDRESS` | Keeper address scoped by the Roles v2 setup |
 | `CRON_SECRET` | Bearer token for `/api/cron/deposits` |
 | `DEPOSITS_START_BLOCK` | Optional first block for the deposit indexer |
 | `PUBLIC_WALLET_URL` | Wallet URL used in invite and add-passkey links |
-| `ENS_OPERATOR_PRIVATE_KEY` | Operator key that registers store subnames and writes ENS records (holds only Sepolia ETH for gas) |
+| `ENS_OPERATOR_PRIVATE_KEY` | Operator key that registers store subnames, writes ENS records and deploys group Safes (holds only Sepolia ETH for gas) |
 
 ### ENS setup (once)
 
@@ -204,10 +206,10 @@ The script registers `<label>.eth`, deploys the subname registry and resolver, w
 ## Testing
 
 ```sh
-# Sepolia fork tests (16 tests)
+# Sepolia fork tests (23 tests)
 cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnpm test
 
-# vitest from the repo root (dashboard 11, wallet 37)
+# vitest from the repo root (dashboard 11, wallet 65)
 pnpm test
 
 # Dashboard type check
@@ -216,7 +218,7 @@ pnpm --filter @bizzet/dashboard run check
 
 ## AI usage
 
-ETHGlobal asks teams to document where AI tools were used. We used AI heavily, and this section lists where.
+ETHGlobal asks teams to document where AI tools were used. We used AI heavily.
 
 | Tool | Where it was used |
 | --- | --- |
@@ -226,7 +228,7 @@ ETHGlobal asks teams to document where AI tools were used. We used AI heavily, a
 | Claude Code | Writing tests and reviewing changes |
 | Devin (Cognition) | 10 commits by `devin-ai-integration[bot]`, merged as PRs #1–#11 |
 
-Commits that Claude Code co-authored carry a `Co-Authored-By: Claude …` trailer (47 commits at the time of writing). Devin's PRs covered the dashboard shadcn setup, DB connection, login page, docs deploy fix, invite registration, passkey rpId, Better Auth login, docs additions, and zod + superforms validation with vitest.
+Commits that Claude Code co-authored carry a `Co-Authored-By: Claude …` trailer (64 commits at the time of writing). Devin's PRs covered the dashboard shadcn setup, DB connection, login page, docs deploy fix, invite registration, passkey rpId, Better Auth login, docs additions, and zod + superforms validation with vitest.
 
 The human team member set the product direction and requirements, made every design decision, reviewed and approved changes, and ran the manual checks.
 

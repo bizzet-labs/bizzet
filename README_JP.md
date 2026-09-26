@@ -6,11 +6,7 @@ English: [README.md](README.md)
 
 bizzet は、売上の受け取りからチームの資金管理まで、ビジネスの業務のために作るウォレットで、パスキーでのログインと複数メンバーによる承認を Safe の上で実現します。
 
-この README では、ETHGlobal Tokyo 2026 の期間中に作ったものと、設計だけ済んでいるものを分けて書いています。次の説明はプロダクトの構想であり、「ETHGlobal Tokyo 2026 の期間中に作ったもの」の節にはこのリポジトリに実在するものとその確認方法だけを載せています。
-
 ## 課題とプロダクトの構想
-
-> この節はプロダクトの構想です。大部分はまだ作っていません。後の「ETHGlobal Tokyo 2026 の期間中に作ったもの」と「未実装のもの」の節を参照してください。
 
 暗号資産での決済を受けるビジネスは、それをチームで回す必要があります。売上は複数の店舗に入り、資金は本部に集める必要があり、出金には1人ではなく複数人の承認が欲しい一方、一般的なウォレットはシードフレーズを持つ1人を前提にしており、ビジネスの運用に合いません。
 
@@ -31,6 +27,7 @@ bizzet の構想では、組織を本部とその配下の店舗（EC サイト�
 | Safe4337 の SafeOp と Safe v1.4.1 の SafeTx の EIP-712 ハッシュ | 配置済みのコントラクトに対するフォークテスト |
 | パスキー（WebAuthn）署名のエンコードと viem のスマートアカウント `toSafePasskeyAccount` | フォークテストで、パスキー署名の UserOperation を EntryPoint の `handleOps` で実行 |
 | ERC-20 送金とオーナー変更のエンコーダ | ダッシュボードの提案で使用、オンチェーンでは未実行 |
+| 店舗の Safe の入れ子の承認（`hashNestedSafeTransaction`、`encodeNestedSafeSignature`）：本部のオーナーが、店舗の SafeTx の EIP-712 の元のバイト列（`0x1901 ‖ domainSeparator ‖ structHash`）を中身とする本部の Safe の SafeMessage に署名し、本部の Safe のコントラクト署名（入れ子の ERC-1271）として包む | フォークテスト（`test/store-safe-approval.ts`）で、本部のオーナー2人の署名で店舗の `execTransaction` を実行、署名1つや誤ったメッセージへの署名では拒否 |
 | Zodiac Roles v2 の設定エンコード（ModuleProxyFactory での配置、キーパーを HQ Safe への JPYC/USDC `transfer` だけに絞る、モジュールの有効化）を1回の MultiSendCallOnly の delegatecall で実行 | フォークテストで、キーパーは HQ Safe にだけ送金でき、他の宛先や関数は拒否 |
 | `execTransaction` のエンコードと、署名者ファクトリの `isValidSignatureForSigner` によるパスキー署名の検証 | フォークテストで、2人のパスキーのオーナーの署名により1つの UserOperation で HQ Safe の配置と出金を実行、署名1つでは拒否 |
 | Sepolia の ENSv2：本部の `.eth` の登録（MockUSDC での commit/register）、VerifiableFactory によるサブネームのレジストリと PermissionedResolver の配置、店舗のサブネーム、`addr`・`bizzet.currency`・`description` のレコードを1回の multicall で書き込み、UniversalResolverV2 による `resolveGroupName` | フォークテストで、登録、冪等な再実行、レコードの書き込み、Universal Resolver での解決 |
@@ -38,7 +35,7 @@ bizzet の構想では、組織を本部とその配下の店舗（EC サイト�
 | Sepolia の Uniswap v4（`src/uniswap.ts`）：V4Quoter での受取量固定の見積もり、Universal Router の `V4_SWAP`（SWAP_EXACT_OUT_SINGLE + SETTLE_ALL + 店舗の Safe への TAKE）、Permit2 の承認、PositionManager による全範囲の流動性 | フォークテスト（`test/uniswap.ts`）で、流動性の追加と JPYC→USDC・USDC→JPYC の受取量固定の交換、受取人がちょうどその量を受け取り見積もりが支払額と一致 |
 | Sepolia のプールに JPYC/USDC の全範囲の流動性を足す `uniswap:liquidity` スクリプト | フォークテストと同じコードパス、実際の Sepolia では未実行 |
 
-Sepolia フォークテスト 16 件は、コントラクトの存在、Safe の作成、パスキー署名の UserOperation を EntryPoint の `handleOps` でエンドツーエンドに実行して Safe とその署名者を配置すること、グループ用 Safe のアドレスと SafeTx ハッシュが配置済みの Safe と一致すること、キーパーが HQ Safe にしか送金できないこと、2人のパスキーによる本部の出金の承認と実行、ENSv2 の登録・レコード・解決、Uniswap v4 の流動性と両方向の受取量固定の交換を確認します。
+Sepolia フォークテスト 23 件は、コントラクトの存在、Safe の作成、パスキー署名の UserOperation を EntryPoint の `handleOps` でエンドツーエンドに実行して Safe とその署名者を配置すること、グループ用 Safe のアドレスと SafeTx ハッシュが配置済みの Safe と一致すること、キーパーが HQ Safe にしか送金できないこと、2人のパスキーによる本部の出金の承認と実行、本部のオーナーによる店舗の Safe の取引の入れ子の承認と実行、ENSv2 の登録・レコード・解決、Uniswap v4 の流動性と両方向の受取量固定の交換を確認します。
 
 **実際の Sepolia での実行。** テスト用の P-256 鍵で署名した UserOperation を、ウォレットのサーバープロキシ経由で Pimlico の bundler と paymaster に送り、ガス代をスポンサーしてもらった状態で Safe とそのパスキー署名者を配置しました：[0xe1bfcc21…a6c4](https://sepolia.etherscan.io/tx/0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4)。
 
@@ -46,17 +43,18 @@ Sepolia フォークテスト 16 件は、コントラクトの存在、Safe の
 
 | 作ったもの | 確認方法 |
 | --- | --- |
-| WebAuthn のパスキーの登録とログイン（パスキー情報はブラウザの localStorage に保持） | ブラウザでの手動確認 |
+| サーバーで検証するパスキーのログイン：`/api/session/challenge` が使い捨てのチャレンジ（5分、署名付きの httpOnly cookie）を発行し、`/api/session` が保存済みの公開鍵で WebAuthn のアサーション（チャレンジ、origin、rpId のハッシュ、ユーザー検証）を検証して、HMAC で署名した12時間有効な httpOnly のセッション cookie を設定 | cookie の署名とアサーションの検証の vitest、ブラウザでの手動確認 |
+| セッションによるアクセス制御：ウォレットの API はセッションからメンバーを特定し、`/login`・`/pay/**`・`/invite/**` 以外のページは `/login` へリダイレクト | 手動確認 |
 | ファクトリの `getSigner` による署名者アドレスの算出 | 手動確認、フォークテストと同じロジック |
-| パスキーを DB に登録する招待ページ（メンバー招待とパスキー追加のリンク） | ダッシュボードで発行したリンクでの手動確認 |
-| Pimlico 経由でガスレスな UserOperation を送るテスト用 Safe 作成ボタン | 手動確認、前述の実際の Sepolia の tx |
+| ブラウザから送られた公開鍵でパスキーを DB に登録する招待ページ（メンバー招待とパスキー追加のリンク） | ダッシュボードで発行したリンクでの手動確認 |
 | Pimlico の API キーをサーバー側に置き、許可したメソッドだけを転送するサーバープロキシ `/api/bundler` | 手動確認、前述の実際の Sepolia の tx |
 | ホーム：所属グループの残高（1回の multicall）と承認待ちの件数 | 使い捨ての DB と開発サーバーに対する API 確認 |
-| 承認画面：メンバーがパスキーで本部の Safe の提案に署名し、サーバーが safeTxHash を再計算して署名者がオーナーであることを確かめ、チェーン上で署名を検証してから保存 | API 確認（誤ったハッシュ・誤った鍵・重複した署名を拒否）、署名形式はフォークテスト |
-| 実行：しきい値に達すると、最後の署名者が自分のパスキーのアカウントと Pimlico で `execTransaction` を送り、`ExecutionSuccess` のログを確認してから提案を実行済みにする | フォークテスト、実際の Sepolia では未送信 |
+| 承認画面：本部の Owner・Approver がパスキーで、本部の Safe の提案と、入れ子の承認による店舗の Safe の提案に署名し、サーバーが safeTxHash を再計算して署名者がオーナーであることを確かめ、チェーン上で署名を検証してから保存 | API 確認（誤ったハッシュ・誤った鍵・重複した署名を拒否）、署名形式はフォークテスト |
+| 実行：しきい値に達すると、最後の署名者が自分のパスキーのアカウント（初回の実行時に自動で作成）と Pimlico で `execTransaction` を送り、未配置のグループの Safe では実行を拒否し、`ExecutionSuccess` のログを確認してから提案を実行済みにする | フォークテスト、実際の Sepolia では未送信 |
 | 客向けの決済ページ `/pay/<ens-name>`：店舗の ENS の名前から Safe のアドレスと受取通貨を解決し、円と JPYC/USDC で価格を表示して客のブラウザウォレットで支払い（ERC-20 の `transfer`、または客が別の通貨で払う場合は店舗の Safe に直接届く Uniswap v4 の交換）、処理中から済へ表示が変わる | 価格の解析と換算の vitest、画面の表示確認、実物のウォレットでは未支払い |
 | 値札ページ `/pay`：決済の URL と印刷用の QR コードを作成 | 画面の表示確認 |
-| ビジネスとマイページの画面（ログアウトは動作） | 手動確認 |
+| 返金依頼 `/business/refund`：店舗のメンバーが返金を依頼し、返金と印を付けた店舗の Safe の出金の提案になる | vitest、手動確認 |
+| マイページ `/mypage`：ダッシュボード用の1時間有効なパスワード追加リンクの発行とログアウト | vitest、手動確認 |
 
 ### apps/dashboard
 
@@ -67,6 +65,7 @@ Sepolia フォークテスト 16 件は、コントラクトの存在、Safe の
 | HQ Safe のオーナーの構成が変わる場合に `owner_change` の提案を作成、ガード付き（3人以上のオーナー、最後の Owner、自分自身） | 手動確認 |
 | ウォレット用の1時間有効なパスキー追加リンクを発行するアカウントページ | 手動確認 |
 | グループ：一覧、店舗の作成、3人以上のパスキーのオーナーからの HQ Safe の作成（しきい値 2）、店舗 Safe の作成、Roles v2 設定の提案 | 手動確認、エンコーダはフォークテスト |
+| Safe の配置：グループ設定の「Safe を配置」が、保存済みの設定でオペレーターの鍵から `createProxyWithNonce` を送信、グループの Safe はここでだけ配置 | 手動確認、実際の Sepolia では未実行 |
 | 出金：Safe トランザクションの提案の一覧・詳細・作成（空いた nonce を再利用する nonce の割り当て）、却下、送信済みの提案の実行済みへの同期 | 手動確認 |
 | ホーム：1回の multicall による残高 | Sepolia での手動確認 |
 | 入金インデクサ：時間の上限付きの ERC-20 Transfer の差分取り込みと、Bearer トークンで保護した `/api/cron/deposits` | 手動確認 |
@@ -74,7 +73,7 @@ Sepolia フォークテスト 16 件は、コントラクトの存在、Safe の
 | Paraglide による日本語と英語（cookie、次にブラウザの言語、最後に ja の順）と shadcn のサイドバー | 手動確認 |
 | ENS：店舗の作成時に `<label>.<hq>.eth` を登録してレコードを書き込むラベル欄、グループ設定での再試行と通貨の編集、グループの画面での解決したアドレスと通貨の表示（ENS と DB が食い違えば警告） | `svelte-check`、登録のコードは ENS のフォークテスト |
 
-vitest は補助関数のロジックだけを対象にしており、ダッシュボードの 11 件はロールのルール・メンバー変更の補助関数・グループの並び順を、ウォレットの 37 件はパスキーの公開鍵の解析・値札の URL の解析と換算・交換のスリッページと承認手順の計画・メンバーが署名できる提案の判定を確認します。両アプリの型チェックも通ります。
+vitest は補助関数のロジックだけを対象にしており、ダッシュボードの 11 件はロールのルール・メンバー変更の補助関数・グループの並び順を、ウォレットの 65 件はパスキーの公開鍵の解析・セッション cookie の署名・WebAuthn のアサーションの検証・値札の URL の解析と換算・交換のスリッページと承認手順の計画・メンバーが署名できる提案の判定・返金・パスワード追加リンクを確認します。両アプリの型チェックも通ります。
 
 ### packages/db
 
@@ -87,7 +86,9 @@ Docusaurus による日本語のホワイトペーパーと設計書（18 ペー
 ## 作ったが実際の Sepolia ではまだ実行していないもの
 
 - **ENS のセットアップ**：`ens:setup` のスクリプトと店舗のサブネームの登録は Sepolia のフォークでだけ確かめており、実際の Sepolia では本部の名前をまだ登録していません。登録するまで `/pay/<名前>` は受取先がない旨を表示します。
-- **出金の実行と客の支払い**：フォークテストと画面の表示で確かめましたが、実物のパスキーと客のウォレットではまだ試していません。
+- **出金の実行と客の支払い**：本部の Safe と入れ子の店舗の Safe の実行はフォークテストと画面の表示で確かめましたが、実物のパスキーと客のウォレットではまだ試していません。
+- **ダッシュボードからの Safe の配置**：実際の Sepolia ではまだ送信していません。
+- **パスキーのログイン**：サーバーでの検証は vitest で確かめましたが、配置したウォレットに実物のパスキーでログインすることはまだ試していません。
 
 ## 未実装のもの（docs で設計済み、実装予定）
 
@@ -95,10 +96,8 @@ Docusaurus による日本語のホワイトペーパーと設計書（18 ペー
 
 - **Checkout コントラクト**：支払いを受けて `Paid` イベントを出すコントラクトと、電子ペーパーの値札。いまは、交換が要るときに客のウォレットが Uniswap の Universal Router を直接呼びます。
 - **レシート**：Semaphore v4 による購入証明。
-- **店舗の Safe の承認**：店舗の Safe の提案への署名には、本部の Owner による本部の Safe のメッセージへの署名（入れ子の ERC-1271）が要り、承認画面では署名できない提案として表示します。
 - **中継用の Safe**：実行は、bizzet の中継用の Safe ではなく、最後に署名したメンバー自身のパスキーのアカウントから送っています。
-- **ウォレットのその他**：返金依頼、パスワード追加リンクの発行。
-- **パスキーのサーバー側検証**（登録時）と、サーバーで検証するウォレットログイン。
+- **登録時のパスキーの attestation の検証**：サーバーはブラウザから送られた公開鍵をそのまま保存しています。
 - **運用**：自動ブリッジと CCTP、Gelato キーパーの配置とオンチェーンでの集金実行、セットアップ後に HQ メンバーがパスキーを登録したときのオーナー追加提案の自動作成。
 
 ## Uniswap v4 との連携
@@ -127,11 +126,12 @@ LIQUIDITY_PRIVATE_KEY=0x... SEPOLIA_RPC_URL=https://... LIQUIDITY_USDC=20 LIQUID
 
 | コンポーネント | 設計 | 状況 |
 | --- | --- | --- |
-| HQ Safe | 3人以上のパスキーのオーナーとしきい値 2 の Safe v1.4.1 | 作成は実装済み、作成はフォークテストで確認済み |
-| 店舗 Safe | HQ Safe を唯一のオーナーとする Safe | 作成は実装済み |
-| メンバーの承認 | メンバーがパスキーで Safe トランザクション（EIP-712 の SafeTx）に署名 | 本部の Safe の提案は実装済み、店舗の Safe の提案はまだ署名不可 |
+| HQ Safe | 3人以上のパスキーのオーナーとしきい値 2 の Safe v1.4.1 | 作成は実装済みでフォークテスト済み、ダッシュボードから配置 |
+| 店舗 Safe | HQ Safe を唯一のオーナーとする Safe | 作成は実装済み、ダッシュボードから配置 |
+| メンバーの承認 | メンバーがパスキーで Safe トランザクション（EIP-712 の SafeTx）に署名 | 本部の Safe の提案と店舗の Safe の提案（入れ子の ERC-1271）は実装済みでフォークテスト済み |
 | relayer | Safe4337Module を持つ bizzet の relayer Safe が、署名済みのトランザクションを ERC-4337 で送信 | 暫定で最後の署名者のパスキーのアカウントが `execTransaction` を送信（フォークテスト済み）、relayer Safe は未実装 |
 | ガス代のスポンサー | Pimlico の paymaster | 実装済み（ウォレットのサーバープロキシ） |
+| Safe の配置 | ダッシュボードからオペレーターの鍵がグループの Safe の `createProxyWithNonce` を送信 | 実装済み、実際の Sepolia では未実行 |
 | キーパーの権限 | Zodiac Roles v2 でキーパーを HQ Safe への JPYC/USDC の送金だけに限定 | エンコードは実装済みでフォークテスト済み、キーパーは未配置 |
 | 提案 | 出金・オーナー変更・Safe 作成の提案を Postgres に保存 | 実装済み（作成、却下、同期） |
 | 受け取りの設定 | グループごとの ENSv2 の名前が、Safe を `addr` のレコード、受取通貨を `bizzet.currency` のテキストレコードとして保持 | 実装済みでフォークテスト済み、実際の Sepolia でのセットアップは未実行 |
@@ -175,7 +175,9 @@ pnpm dev         # docs :3000、dashboard :5174、wallet :5175
 | `PIMLICO_API_KEY` | Pimlico の bundler/paymaster のキー、サーバー側でのみ使用 |
 | `PUBLIC_PASSKEY_RP_ID` | 任意、WebAuthn の rpId の上書き |
 | `DATABASE_URL` | ダッシュボードと共有する Postgres の URL |
-| `PUBLIC_SEPOLIA_RPC_URL` | 任意、Sepolia の RPC エンドポイント |
+| `PUBLIC_SEPOLIA_RPC_URL` | 任意、Sepolia の RPC エンドポイント（既定は CORS 対応の `https://ethereum-sepolia-rpc.publicnode.com`） |
+| `WALLET_SESSION_SECRET` | セッション cookie に署名する鍵、本番では必須で開発時はプロセスごとの使い捨ての鍵を使用 |
+| `PUBLIC_DASHBOARD_URL` | パスワード追加リンクで使うダッシュボードの URL（既定は `http://localhost:5174`） |
 | `PUBLIC_PAY_MOCK_RESOLUTION` | 開発サーバー専用、`0xaddress,USDC,name` で決済ページの ENS の解決を置き換え、その旨を画面に表示 |
 
 `apps/dashboard/.env`
@@ -185,12 +187,12 @@ pnpm dev         # docs :3000、dashboard :5174、wallet :5175
 | `DATABASE_URL` | Postgres の URL、空ならローカルの DB を使用 |
 | `BETTER_AUTH_SECRET` | Better Auth のシークレット |
 | `BETTER_AUTH_URL` | ダッシュボードのベース URL |
-| `SEPOLIA_RPC_URL` | 任意、Sepolia の RPC エンドポイント |
+| `SEPOLIA_RPC_URL` | 任意、Sepolia の RPC エンドポイント（既定はウォレットと同じ） |
 | `KEEPER_ADDRESS` | Roles v2 の設定で権限を絞るキーパーのアドレス |
 | `CRON_SECRET` | `/api/cron/deposits` 用の Bearer トークン |
 | `DEPOSITS_START_BLOCK` | 任意、入金インデクサの開始ブロック |
 | `PUBLIC_WALLET_URL` | 招待リンクとパスキー追加リンクで使うウォレットの URL |
-| `ENS_OPERATOR_PRIVATE_KEY` | 店舗のサブネームを登録し ENS のレコードを書き込むオペレーターの鍵（ガス代用の Sepolia ETH だけを保有） |
+| `ENS_OPERATOR_PRIVATE_KEY` | 店舗のサブネームの登録、ENS のレコードの書き込み、グループの Safe の配置を行うオペレーターの鍵（ガス代用の Sepolia ETH だけを保有） |
 
 ### ENS のセットアップ（1回のみ）
 
@@ -204,10 +206,10 @@ ENS_OPERATOR_PRIVATE_KEY=0x... SEPOLIA_RPC_URL=https://... ENS_HQ_LABEL=bizzet \
 ## テスト
 
 ```sh
-# Sepolia フォークテスト（16 件）
+# Sepolia フォークテスト（23 件）
 cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnpm test
 
-# リポジトリのルートから vitest（dashboard 11 件、wallet 37 件）
+# リポジトリのルートから vitest（dashboard 11 件、wallet 65 件）
 pnpm test
 
 # ダッシュボードの型チェック
@@ -216,7 +218,7 @@ pnpm --filter @bizzet/dashboard run check
 
 ## AI の利用
 
-ETHGlobal はチームに、AI ツールを使った箇所の記載を求めています。私たちは AI を多用しており、この節ではその箇所を挙げます。
+ETHGlobal はチームに、AI ツールを使った箇所の記載を求めています。私たちは AI を多用しました。
 
 | ツール | 使った箇所 |
 | --- | --- |
@@ -226,7 +228,7 @@ ETHGlobal はチームに、AI ツールを使った箇所の記載を求めて�
 | Claude Code | テストの作成と変更のレビュー |
 | Devin（Cognition） | `devin-ai-integration[bot]` による 10 コミット、PR #1〜#11 としてマージ |
 
-Claude Code と共同で作ったコミットには `Co-Authored-By: Claude …` のトレーラーが付いています（執筆時点で 47 コミット）。Devin の PR は、ダッシュボードの shadcn のセットアップ、DB 接続、ログインページ、docs のデプロイの修正、招待からの登録、パスキーの rpId、Better Auth のログイン、docs の追記、vitest 付きの zod + superforms による入力検証を扱いました。
+Claude Code と共同で作ったコミットには `Co-Authored-By: Claude …` のトレーラーが付いています（執筆時点で 64 コミット）。Devin の PR は、ダッシュボードの shadcn のセットアップ、DB 接続、ログインページ、docs のデプロイの修正、招待からの登録、パスキーの rpId、Better Auth のログイン、docs の追記、vitest 付きの zod + superforms による入力検証を扱いました。
 
 人間のチームメンバーは、プロダクトの方針と要件を決め、すべての設計判断を行い、変更をレビューして承認し、手動での確認を行いました。
 
