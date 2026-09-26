@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { eq, invitations, members } from '@bizzet/db'
 import { error, fail, redirect } from '@sveltejs/kit'
 import { APIError } from 'better-auth'
-import { auth, normalizeEmail, PASSWORD_MIN_LENGTH } from '$lib/server/auth'
+import { getAuth, normalizeEmail, PASSWORD_MIN_LENGTH } from '$lib/server/auth'
 import type { Actions, PageServerLoad } from './$types'
 
 async function findOpenInvitation(db: App.Locals['db'], token: string) {
@@ -52,7 +52,7 @@ export const actions: Actions = {
     // Better Auth のユーザーを作る。sveltekitCookies によりセッションの Cookie もここで発行される
     let userId: string
     try {
-      const result = await auth.api.signUpEmail({
+      const result = await getAuth().api.signUpEmail({
         body: { name: email, email, password },
         headers: request.headers,
       })

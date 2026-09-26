@@ -2,7 +2,7 @@ import type { Handle } from '@sveltejs/kit'
 import { redirect } from '@sveltejs/kit'
 import { svelteKitHandler } from 'better-auth/svelte-kit'
 import { building } from '$app/environment'
-import { auth, getSessionMember } from '$lib/server/auth'
+import { getAuth, getSessionMember } from '$lib/server/auth'
 import { db } from '$lib/server/db'
 
 // ログインなしで開ける画面
@@ -23,5 +23,5 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (event.locals.member && pathname === '/login') {
     redirect(303, '/')
   }
-  return svelteKitHandler({ event, resolve, auth, building })
+  return svelteKitHandler({ event, resolve, auth: getAuth(), building })
 }

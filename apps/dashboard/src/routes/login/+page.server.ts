@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit'
 import { APIError } from 'better-auth'
-import { auth } from '$lib/server/auth'
+import { getAuth } from '$lib/server/auth'
 import type { Actions } from './$types'
 
 export const actions: Actions = {
@@ -14,7 +14,7 @@ export const actions: Actions = {
 
     // sveltekitCookies によりセッションの Cookie はここで発行される
     try {
-      await auth.api.signInEmail({
+      await getAuth().api.signInEmail({
         body: { email, password },
         headers: request.headers,
       })
