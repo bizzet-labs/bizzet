@@ -12,7 +12,7 @@ async function main() {
   const email = normalizeEmail(process.env.BOOTSTRAP_EMAIL ?? DEFAULT_EMAIL)
   const password = process.env.BOOTSTRAP_PASSWORD ?? DEFAULT_PASSWORD
 
-  const db = createDb(process.env.DATABASE_URL ?? LOCAL_DATABASE_URL)
+  const db = createDb(process.env.DATABASE_URL || LOCAL_DATABASE_URL)
   const auth = createAuth(db, {
     baseURL: process.env.DASHBOARD_URL ?? 'http://localhost:5174',
     secret: process.env.BETTER_AUTH_SECRET,
