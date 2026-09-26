@@ -2,10 +2,13 @@ import { relations } from 'drizzle-orm'
 import {
   boolean,
   index,
+  integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
 // グループの種類。本部が上位にあり、店舗はその配下に置く
@@ -14,11 +17,20 @@ export const groupKind = pgEnum('group_kind', ['headquarters', 'store'])
 // メンバーのロール。Owner と Approver は Safe のオーナーになり、Viewer は閲覧だけ
 export const memberRole = pgEnum('member_role', ['owner', 'approver', 'viewer'])
 
-// 本部と店舗のグループ
+// 本部と店舗のグループ。グループごとに Safe を1つ持つ
 export const groups = pgTable('groups', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   kind: groupKind('kind').notNull(),
+  // 確定した Safe のアドレス。設定を確定するまでは null
+  safeAddress: text('safe_address').unique(),
+  // Safe の作成時の設定。アドレスはこの設定から CREATE2 で決まる。
+  // オーナーは Safe の getOwners() と同じ並び（オーナーの変更が実行されたら更新する）
+  safeOwners: jsonb('safe_owners').$type<string[]>(),
+  safeThreshold: integer('safe_threshold'),
+  safeSaltNonce: text('safe_salt_nonce'),
+  // Safe をチェーンに配置した日時。配置前は null
+  safeDeployedAt: timestamp('safe_deployed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -42,6 +54,9 @@ export const passkeys = pgTable('passkeys', {
 export const members = pgTable('members', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
+  // 表示用の名前と役職（例：経営、会計部、店長）。招待のときに入れ、未入力なら null
+  name: text('name'),
+  title: text('title'),
   groupId: text('group_id')
     .notNull()
     .references(() => groups.id),
@@ -59,9 +74,20 @@ export const members = pgTable('members', {
     .defaultNow(),
 })
 
-// Owner が発行する招待。トークンを含むリンクからメンバー登録を済ませると使用済みになる
+// 招待の種類。member はメンバーを作る招待、add_passkey と add_password は
+// ログイン済みのメンバーが、もう一方のログイン手段を追加するためのリンク
+export const invitationKind = pgEnum('invitation_kind', [
+  'member',
+  'add_passkey',
+  'add_password',
+])
+
+// Owner が発行する招待と、ログイン手段の追加用リンク。リンクから登録を済ませると使用済みになる
 export const invitations = pgTable('invitations', {
   token: text('token').primaryKey(),
+  kind: invitationKind('kind').notNull().default('member'),
+  // 追加用リンクの対象のメンバー。メンバーの招待では null
+  memberId: text('member_id').references(() => members.id),
   email: text('email').notNull(),
   groupId: text('group_id')
     .notNull()
@@ -74,6 +100,131 @@ export const invitations = pgTable('invitations', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
+})
+
+// Safe の取引の提案の種類。出金、オーナーの変更、Roles v2 の設定など、どれも
+// 「Safe の取引にオーナーが署名し、中継用アカウントが送る」同じ流れで扱う
+export const safeTransactionKind = pgEnum('safe_transaction_kind', [
+  'payout',
+  'owner_change',
+  'safe_setup',
+])
+
+// 提案の状態。署名の数は safe_transaction_signatures から数える。
+// open：送信前（署名が0件なら申請中、1件以上なら承認待ち）、submitted：中継用アカウントが送った、
+// executed：Safe が実行した、rejected：実行前に取り下げた
+export const safeTransactionStatus = pgEnum('safe_transaction_status', [
+  'open',
+  'submitted',
+  'executed',
+  'rejected',
+])
+
+// Safe の取引の提案。メンバーは safe_tx_hash（EIP-712 の SafeTx のハッシュ）に署名する
+export const safeTransactions = pgTable(
+  'safe_transactions',
+  {
+    id: text('id').primaryKey(),
+    // 取引を実行する Safe のグループ
+    groupId: text('group_id')
+      .notNull()
+      .references(() => groups.id),
+    safeAddress: text('safe_address').notNull(),
+    kind: safeTransactionKind('kind').notNull(),
+    // Safe の execTransaction に渡す中身
+    to: text('to').notNull(),
+    value: text('value').notNull().default('0'),
+    data: text('data').notNull().default('0x'),
+    operation: integer('operation').notNull().default(0),
+    nonce: integer('nonce').notNull(),
+    safeTxHash: text('safe_tx_hash').notNull().unique(),
+    // 画面に出す内容。出金なら通貨・金額・宛先、オーナーの変更なら対象のメンバー
+    token: text('token'),
+    amount: text('amount'),
+    recipient: text('recipient'),
+    targetMemberId: text('target_member_id').references(() => members.id),
+    description: text('description'),
+    status: safeTransactionStatus('status').notNull().default('open'),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => members.id),
+    // 中継用アカウントが送った取引と、Safe が実行した日時
+    txHash: text('tx_hash'),
+    executedAt: timestamp('executed_at', { withTimezone: true }),
+    rejectedAt: timestamp('rejected_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('safe_transactions_group_idx').on(table.groupId),
+    // 同じ Safe・同じノンスの提案は、却下されたものを除いて1件だけにする（アプリ側で守る）
+    index('safe_transactions_safe_nonce_idx').on(
+      table.safeAddress,
+      table.nonce,
+    ),
+  ],
+)
+
+// 提案への署名。1人のメンバーは1つの提案に1回だけ署名する
+export const safeTransactionSignatures = pgTable(
+  'safe_transaction_signatures',
+  {
+    id: text('id').primaryKey(),
+    transactionId: text('transaction_id')
+      .notNull()
+      .references(() => safeTransactions.id, { onDelete: 'cascade' }),
+    memberId: text('member_id')
+      .notNull()
+      .references(() => members.id),
+    // 署名したパスキーの署名者のアドレス
+    signer: text('signer').notNull(),
+    signature: text('signature').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('safe_transaction_signatures_member_idx').on(
+      table.transactionId,
+      table.memberId,
+    ),
+  ],
+)
+
+// 入金の履歴。グループの Safe に入った ERC-20（JPYC・USDC）の送金をチェーンから取り込む
+export const deposits = pgTable(
+  'deposits',
+  {
+    // チェーン ID・取引のハッシュ・ログの番号をつないだもの
+    id: text('id').primaryKey(),
+    chainId: integer('chain_id').notNull(),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => groups.id),
+    safeAddress: text('safe_address').notNull(),
+    token: text('token').notNull(),
+    // 最小単位の金額（USDC なら 6 桁、JPYC なら 18 桁の小数を含まない整数）
+    amount: text('amount').notNull(),
+    from: text('from').notNull(),
+    txHash: text('tx_hash').notNull(),
+    logIndex: integer('log_index').notNull(),
+    blockNumber: text('block_number').notNull(),
+    blockTimestamp: timestamp('block_timestamp', {
+      withTimezone: true,
+    }).notNull(),
+  },
+  (table) => [index('deposits_group_idx').on(table.groupId)],
+)
+
+// チェーンからの取り込みを、どのブロックまで済ませたか。キーは用途とチェーン（例：deposits:11155111）
+export const indexCursors = pgTable('index_cursors', {
+  key: text('key').primaryKey(),
+  blockNumber: text('block_number').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 })
 
 // ここから下は Better Auth が使うテーブル（ダッシュボードのメールアドレス/パスワードログイン）。

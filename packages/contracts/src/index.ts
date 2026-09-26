@@ -15,6 +15,19 @@ export {
   type SafeSetup,
 } from './safe.ts'
 export {
+  encodeAddOwner,
+  encodeErc20Transfer,
+  encodeRemoveOwner,
+  erc20Abi,
+  findToken,
+  hashSafeTransaction,
+  type SafeTransactionData,
+  SENTINEL_OWNERS,
+  safeOwnerAbi,
+  type TokenSymbol,
+  tokens,
+} from './safe-transaction.ts'
+export {
   encodePasskeySignature,
   encodeSafeSignatures,
   hashSafeOperation,

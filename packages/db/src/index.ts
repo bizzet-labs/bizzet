@@ -1,4 +1,19 @@
-export { and, desc, eq, gt, isNull } from 'drizzle-orm'
+export {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  max,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm'
 export {
   type Auth,
   createAuth,

@@ -22,6 +22,13 @@
       "when": 1790423861480,
       "tag": "0002_legal_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790452116315,
+      "tag": "0003_empty_leo",
+      "breakpoints": true
     }
   ]
 }
