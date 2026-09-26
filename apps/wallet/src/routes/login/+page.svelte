@@ -2,9 +2,17 @@
 import FingerprintIcon from '@lucide/svelte/icons/fingerprint'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
-import { loadPasskey, login } from '@/passkey.js'
+import { roleLabels } from '@/format.js'
+import {
+  loadPasskey,
+  login,
+  type StoredPasskey,
+  savePasskey,
+} from '@/passkey.js'
 import { goto } from '$app/navigation'
 import logoMark from '$lib/assets/logo-mark.png'
+
+let { data } = $props()
 
 let pending = $state(false)
 let error = $state('')
@@ -27,6 +35,27 @@ async function handleLogin() {
     pending = false
   }
 }
+
+// デモモードのログイン。パスキーの署名なしで、選んだメンバーのセッションを作る
+async function handleDemoLogin(memberId: string) {
+  pending = true
+  error = ''
+  try {
+    const response = await fetch('/api/session/demo', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ memberId }),
+    })
+    if (!response.ok) throw new Error('ログインできませんでした')
+    savePasskey((await response.json()) as StoredPasskey)
+    await goto('/')
+  } catch (e) {
+    console.error(e)
+    error = e instanceof Error ? e.message : 'ログインできませんでした'
+  } finally {
+    pending = false
+  }
+}
 </script>
 
 <svelte:head>
@@ -41,10 +70,26 @@ async function handleLogin() {
 			<Card.Description>登録したパスキーでログインします</Card.Description>
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-3">
-			<Button size="lg" onclick={handleLogin} disabled={pending}>
-				<FingerprintIcon data-icon="inline-start" />
-				パスキーでログイン
-			</Button>
+			{#if data.demoMembers}
+				{#each data.demoMembers as m (m.id)}
+					<div class="flex items-center justify-between gap-3 rounded-lg border p-3">
+						<div class="flex min-w-0 flex-col">
+							<span class="font-medium">{m.name}</span>
+							<span class="text-muted-foreground text-xs">{m.groupName}・{roleLabels[m.role]}</span>
+						</div>
+						<Button size="sm" onclick={() => handleDemoLogin(m.id)} disabled={pending}>
+							このメンバーでログイン
+						</Button>
+					</div>
+				{:else}
+					<p class="text-muted-foreground text-center text-sm">パスキーを登録したメンバーがいません</p>
+				{/each}
+			{:else}
+				<Button size="lg" onclick={handleLogin} disabled={pending}>
+					<FingerprintIcon data-icon="inline-start" />
+					パスキーでログイン
+				</Button>
+			{/if}
 			{#if error}
 				<p class="text-destructive text-center text-sm">{error}</p>
 			{/if}

@@ -31,6 +31,23 @@ export async function signApproval(
   )
 }
 
+// デモモードの承認。パスキーに署名させず、サーバーが署名の印を保存する
+export function signApprovalDemo(passkey: StoredPasskey, id: string) {
+  return callApi<{ signatureCount: number; threshold: number }>(
+    `/api/approvals/${id}/sign`,
+    passkey,
+  )
+}
+
+// デモモードの実行。取引を送らず、サーバーが実行済みにして模擬の取引のハッシュを返す
+export async function executeApprovalDemo(passkey: StoredPasskey, id: string) {
+  const { txHash } = await callApi<{ txHash: Hex.Hex }>(
+    `/api/approvals/${id}/execution`,
+    passkey,
+  )
+  return txHash
+}
+
 // 署名のそろった提案を、自分のパスキーの ERC-4337 アカウントから送り、実行済みにする。
 // 仮置き：中継用アカウントを作るまでの代わり。ガス代は Paymaster が肩代わりする
 export async function executeApproval(passkey: StoredPasskey, id: string) {

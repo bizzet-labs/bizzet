@@ -1,6 +1,8 @@
 import { error, json } from '@sveltejs/kit'
 import type { Hex } from 'viem'
+import { addDemoSignature } from '$lib/server/approval-demo'
 import { addSignature } from '$lib/server/approvals'
+import { isDemoMode } from '$lib/server/demo'
 import { requireMember } from '$lib/server/member'
 import type { RequestHandler } from './$types'
 
@@ -19,6 +21,12 @@ type Body = {
 export const POST: RequestHandler = async ({ locals, params, request }) => {
   const { signature } = (await request.json()) as Body
   const { member, passkey, group } = await requireMember(locals)
+  // デモモードでは、パスキーの署名もチェーン上の検証も行わない
+  if (isDemoMode()) {
+    return json(
+      await addDemoSignature(locals.db, member, group, passkey, params.id),
+    )
+  }
   const { authenticatorData, clientDataJSON, r, s } = signature ?? {}
   if (
     typeof authenticatorData !== 'string' ||

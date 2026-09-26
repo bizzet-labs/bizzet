@@ -2,6 +2,7 @@ import { tokens } from '@bizzet/contracts'
 import { json } from '@sveltejs/kit'
 import { listApprovals } from '$lib/server/approvals'
 import { getBalances, type TokenBalances } from '$lib/server/balances'
+import { getDemoTokenBalances, isDemoMode } from '$lib/server/demo'
 import {
   getVisibleGroups,
   isHeadquartersSigner,
@@ -19,7 +20,10 @@ export const POST: RequestHandler = async ({ locals }) => {
   // 残高を読めなくても、グループと件数は出す
   let balances: Map<string, TokenBalances> | null
   try {
-    balances = await getBalances(addresses)
+    // デモモードではチェーンの代わりに、入金と実行済みの出金から求めた残高を使う
+    balances = isDemoMode()
+      ? await getDemoTokenBalances(locals.db, addresses)
+      : await getBalances(addresses)
   } catch (e) {
     console.error(e)
     balances = null

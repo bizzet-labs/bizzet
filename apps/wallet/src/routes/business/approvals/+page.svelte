@@ -4,11 +4,17 @@ import SendIcon from '@lucide/svelte/icons/send'
 import { onMount } from 'svelte'
 import type { Hex } from 'viem'
 import { callApi } from '@/api.js'
-import { executeApproval, signApproval } from '@/approvals.js'
+import {
+  executeApproval,
+  executeApprovalDemo,
+  signApproval,
+  signApprovalDemo,
+} from '@/approvals.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
 import { explorerTxUrl, formatUnitsJa } from '@/format.js'
-import { loadPasskey, type StoredPasskey } from '@/passkey.js'
+import { DEMO_PASSKEY, loadPasskey, type StoredPasskey } from '@/passkey.js'
+import { page } from '$app/state'
 
 type Approval = {
   id: string
@@ -52,6 +58,14 @@ const unsignableLabel = {
 }
 
 let passkey: StoredPasskey | null = null
+// デモモードでは、パスキーの署名と取引の送信をサーバーの模擬に置き換える
+const demoMode = $derived(page.data.demoMode === true)
+const sign = (key: StoredPasskey, item: Approval) =>
+  demoMode
+    ? signApprovalDemo(key, item.id)
+    : signApproval(key, item.id, item.signingHash as Hex)
+const execute = (key: StoredPasskey, id: string) =>
+  demoMode ? executeApprovalDemo(key, id) : executeApproval(key, id)
 let approvals = $state<Approval[] | null>(null)
 let canSign = $state(true)
 let error = $state('')
@@ -70,7 +84,8 @@ async function load() {
 }
 
 onMount(async () => {
-  passkey = loadPasskey()
+  // デモモードではサーバーがセッションからメンバーを決めるため、端末の記録がなくても進める
+  passkey = loadPasskey() ?? (demoMode ? DEMO_PASSKEY : null)
   if (!passkey) {
     error = 'この端末にパスキーがありません'
     return
@@ -104,16 +119,12 @@ function handleSign(item: Approval) {
   const key = passkey
   if (!key) return
   return run(item.id, async () => {
-    const { signatureCount, threshold } = await signApproval(
-      key,
-      item.id,
-      item.signingHash as Hex,
-    )
+    const { signatureCount, threshold } = await sign(key, item)
     // 自分の署名でしきい値に届いたら、そのまま実行まで送る
     if (signatureCount >= threshold) {
       executedHash = {
         ...executedHash,
-        [item.id]: await executeApproval(key, item.id),
+        [item.id]: await execute(key, item.id),
       }
     }
   })
@@ -125,7 +136,7 @@ function handleExecute(item: Approval) {
   return run(item.id, async () => {
     executedHash = {
       ...executedHash,
-      [item.id]: await executeApproval(key, item.id),
+      [item.id]: await execute(key, item.id),
     }
   })
 }
@@ -165,12 +176,16 @@ function short(value: string) {
 		{#each Object.entries(executedHash) as [id, hash] (id)}
 			<p class="text-sm">
 				実行しました：
+				{#if demoMode}
+					<span class="font-mono">{short(hash)}（模擬）</span>
+				{:else}
 				<a
 					href={explorerTxUrl(hash)}
 					target="_blank"
 					rel="noreferrer"
 					class="font-mono underline">{short(hash)}</a
 				>
+				{/if}
 			</p>
 		{/each}
 

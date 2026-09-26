@@ -9,9 +9,15 @@ import { callApi } from '@/api.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
 import { explorerAddressUrl, roleLabels } from '@/format.js'
-import { endSession, loadPasskey, type StoredPasskey } from '@/passkey.js'
+import {
+  DEMO_PASSKEY,
+  endSession,
+  loadPasskey,
+  type StoredPasskey,
+} from '@/passkey.js'
 import { getSafeAddress } from '@/safe.js'
 import { goto } from '$app/navigation'
+import { page } from '$app/state'
 
 let safeAddress = $state('')
 let status = $state('読み込み中…')
@@ -76,12 +82,18 @@ async function handleCopy() {
 }
 
 onMount(async () => {
-  passkey = loadPasskey()
+  const demoMode = page.data.demoMode === true
+  passkey = loadPasskey() ?? (demoMode ? DEMO_PASSKEY : null)
   if (!passkey) {
     status = 'この端末にパスキーがありません'
     return
   }
   void loadMe(passkey)
+  // デモモードではチェーンを読まないため、パスキーのアカウントのアドレスは出さない
+  if (demoMode) {
+    status = 'デモモードでは表示しません'
+    return
+  }
   try {
     const address = await getSafeAddress(passkey)
     safeAddress = address

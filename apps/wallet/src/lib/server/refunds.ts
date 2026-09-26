@@ -24,6 +24,7 @@ import {
   zeroAddress,
 } from 'viem'
 import { publicClient } from '$lib/chain'
+import { demoSafeNonce, getDemoBalances, isDemoMode } from './demo'
 import type { Group, Member } from './member'
 
 // 返金は店舗の Safe からの出金として作る。種類は出金（payout）のまま、説明の先頭でほかの出金と見分ける
@@ -90,7 +91,10 @@ export function chooseNonce(onchain: bigint, used: Iterable<bigint>) {
 }
 
 async function nextSafeNonce(db: Db, safe: Address) {
-  const onchain = await readSafeNonce(publicClient, safe)
+  // デモモードではチェーンを読まず、実行済みの提案からノンスを決める
+  const onchain = isDemoMode()
+    ? await demoSafeNonce(db, safe)
+    : await readSafeNonce(publicClient, safe)
   const pending = await db.query.safeTransactions.findMany({
     where: and(
       eq(safeTransactions.safeAddress, safe.toLowerCase()),
@@ -105,8 +109,15 @@ async function nextSafeNonce(db: Db, safe: Address) {
 }
 
 // Safe が持つ通貨の残高（最小単位）。読み取りに失敗したら null
-async function getTokenBalance(safe: Address, token: Address) {
+async function getTokenBalance(db: Db, safe: Address, token: Address) {
   try {
+    // デモモードではチェーンの代わりにデモの残高を使う
+    if (isDemoMode()) {
+      const symbol = tokens.find((t) => t.address === token)?.symbol
+      const balances = await getDemoBalances(db, [safe])
+      const b = balances.get(safe.toLowerCase())
+      return b && symbol ? b[symbol] : null
+    }
     return await publicClient.readContract({
       address: token,
       abi: erc20Abi,
@@ -152,7 +163,7 @@ export async function createRefund(
   }
 
   // 残高を超える出金は実行に失敗するため作らせない。読み取れないときは通す
-  const balance = await getTokenBalance(safe, token.address)
+  const balance = await getTokenBalance(db, safe, token.address)
   if (balance !== null && amount.value > balance) {
     return { ok: false, message: `店舗の ${token.symbol} の残高が足りません` }
   }

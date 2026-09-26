@@ -34,7 +34,14 @@ export function loadPasskey(): StoredPasskey | null {
   }
 }
 
-function savePasskey(passkey: StoredPasskey) {
+// デモモードで端末にパスキーの記録がないときの代わり。API はセッションからメンバーを決めるため中身は使わない
+export const DEMO_PASSKEY: StoredPasskey = {
+  id: 'demo',
+  publicKey: '0x',
+  signer: '0x0000000000000000000000000000000000000000',
+}
+
+export function savePasskey(passkey: StoredPasskey) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(passkey))
   } catch {

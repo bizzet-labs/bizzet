@@ -5,13 +5,15 @@ import PenLineIcon from '@lucide/svelte/icons/pen-line'
 import { onMount } from 'svelte'
 import { callApi } from '@/api.js'
 import * as Card from '@/components/ui/card/index.js'
-import { loadPasskey } from '@/passkey.js'
+import { DEMO_PASSKEY, loadPasskey } from '@/passkey.js'
+import { page } from '$app/state'
 
 // 返金はすべてのメンバー、承認は本部の Owner と Approver 向け
 let canSign = $state(false)
 
 onMount(async () => {
-  const passkey = loadPasskey()
+  const passkey =
+    loadPasskey() ?? (page.data.demoMode === true ? DEMO_PASSKEY : null)
   if (!passkey) return
   try {
     ;({ canSign } = await callApi<{ canSign: boolean }>('/api/me', passkey))

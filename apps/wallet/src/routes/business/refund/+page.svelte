@@ -4,7 +4,8 @@ import { callApi } from '@/api.js'
 import { Button } from '@/components/ui/button/index.js'
 import * as Card from '@/components/ui/card/index.js'
 import { formatUnitsJa, shortAddress } from '@/format.js'
-import { loadPasskey, type StoredPasskey } from '@/passkey.js'
+import { DEMO_PASSKEY, loadPasskey, type StoredPasskey } from '@/passkey.js'
+import { page as appPage } from '$app/state'
 
 type RefundItem = {
   id: string
@@ -45,7 +46,8 @@ async function load() {
 }
 
 onMount(async () => {
-  passkey = loadPasskey()
+  passkey =
+    loadPasskey() ?? (appPage.data.demoMode === true ? DEMO_PASSKEY : null)
   if (!passkey) {
     loadError =
       'この端末にパスキーがありません。招待か追加用のリンクから登録してください'

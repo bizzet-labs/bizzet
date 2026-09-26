@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit'
+import { isDemoMode } from '$lib/server/demo'
 import type { LayoutServerLoad } from './$types'
 
 // ログインなしで開けるページ。値札からの支払いは客向け、招待はログインの前に使う
@@ -14,5 +15,5 @@ function isPublicPath(pathname: string) {
 // ページを移るたびにサーバーで確かめるよう、url.pathname に依存させる
 export const load: LayoutServerLoad = ({ locals, url }) => {
   if (!isPublicPath(url.pathname) && !locals.passkeyId) redirect(303, '/login')
-  return {}
+  return { demoMode: isDemoMode() }
 }
