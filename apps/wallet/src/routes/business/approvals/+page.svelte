@@ -21,12 +21,13 @@ type Approval = {
   data: string
   nonce: number
   safeTxHash: string
+  signingHash: string
+  nested: boolean
   createdAt: string
   signatureCount: number
   threshold: number | null
   signedByMe: boolean
   unsignable:
-    | 'store_safe'
     | 'not_owner'
     | 'already_signed'
     | 'ready'
@@ -42,8 +43,6 @@ const kindLabel = {
 }
 
 const unsignableLabel = {
-  store_safe:
-    '店舗の Safe の提案は、本部の Safe のコントラクト署名が要るため、まだウォレットで署名できません',
   not_owner: 'あなたのパスキーは本部の Safe のオーナーではありません',
   already_signed: '署名済みです',
   ready: '必要な署名がそろっています',
@@ -106,7 +105,7 @@ function handleSign(item: Approval) {
     const { signatureCount, threshold } = await signApproval(
       key,
       item.id,
-      item.safeTxHash as Hex,
+      item.signingHash as Hex,
     )
     // 自分の署名でしきい値に届いたら、そのまま実行まで送る
     if (signatureCount >= threshold) {
@@ -198,6 +197,9 @@ function short(value: string) {
 						<dt class="text-muted-foreground">署名</dt>
 						<dd class="tabular-nums">{item.signatureCount} / {item.threshold ?? '—'}</dd>
 					</dl>
+					{#if item.nested}
+						<p class="text-muted-foreground text-sm">本部の Safe として承認します</p>
+					{/if}
 					{#if item.unsignable === null}
 						<Button onclick={() => handleSign(item)} disabled={busyId !== ''}>
 							<FingerprintIcon data-icon="inline-start" />

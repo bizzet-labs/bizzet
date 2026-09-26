@@ -16,7 +16,7 @@ type Body = {
   }
 }
 
-// SafeTx のハッシュへのパスキーの署名を受け取り、検証してから保存する
+// 提案の署名するハッシュ（SafeTx か、店舗の提案なら本部の SafeMessage）へのパスキーの署名を受け取り、検証してから保存する
 export const POST: RequestHandler = async ({ locals, params, request }) => {
   const { passkeyId, signature } = (await request.json()) as Body
   const { member, passkey, group } = await findMemberByPasskey(
