@@ -44,7 +44,7 @@ const sidebars: SidebarsConfig = {
       label: 'Design',
       collapsed: false,
       link: { type: 'doc', id: 'design' },
-      items: ['features', 'screens'],
+      items: ['features', 'screens', 'design-wallet'],
     },
   ],
 }
