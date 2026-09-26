@@ -47,8 +47,10 @@ Everything here runs on Ethereum Sepolia only.
 | `execTransaction` encoding and passkey signature checks via the signer factory's `isValidSignatureForSigner` | Fork test: two passkey owners' signatures deploy the HQ Safe and execute a payout in one UserOperation; one signature is rejected |
 | ENSv2 on Sepolia: HQ `.eth` registration (commit/register with MockUSDC), a subname registry and PermissionedResolver deployed via VerifiableFactory, store subnames, `addr` + `bizzet.currency` + `description` records in one multicall, and `resolveGroupName` through UniversalResolverV2 | Fork tests: register, re-run idempotently, write records and resolve them through the Universal Resolver |
 | `ens:setup` script that performs the one-time ENS setup and prints the `ens_settings` row | Same code path as the fork tests; not yet run on live Sepolia |
+| Uniswap v4 on Sepolia (`src/uniswap.ts`): V4Quoter exact-output quotes, Universal Router `V4_SWAP` (SWAP_EXACT_OUT_SINGLE + SETTLE_ALL + TAKE to the store Safe), Permit2 approvals, and full-range liquidity via PositionManager | Fork tests (`test/uniswap.ts`): add liquidity, swap JPYC→USDC and USDC→JPYC exact-out; the recipient gets exactly the amount and the quote matches what was paid |
+| `uniswap:liquidity` script that adds full-range JPYC/USDC liquidity to the Sepolia pool | Same code path as the fork tests; not yet run on live Sepolia |
 
-The 13 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed UserOperation executed end to end through EntryPoint `handleOps`, deploying the Safe and its signer; group Safe address and SafeTx hash match the deployed Safe; the keeper can only transfer to the HQ Safe; two-passkey approval and execution of an HQ payout; and ENSv2 registration, records and resolution.
+The 16 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signed UserOperation executed end to end through EntryPoint `handleOps`, deploying the Safe and its signer; group Safe address and SafeTx hash match the deployed Safe; the keeper can only transfer to the HQ Safe; two-passkey approval and execution of an HQ payout; ENSv2 registration, records and resolution; and Uniswap v4 liquidity and exact-output swaps in both directions.
 
 **Live on Sepolia.** A passkey-signed UserOperation (test P-256 key) was sent through Pimlico's bundler and paymaster via the wallet's server proxy, deploying a Safe and its passkey signer with gas sponsored: [0xe1bfcc21…a6c4](https://sepolia.etherscan.io/tx/0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4).
 
@@ -64,7 +66,7 @@ The 13 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signe
 | Home: balances of the member's groups (one multicall) and the pending-approval count | API check against a throwaway DB and a dev server |
 | Approval screen: members sign HQ Safe proposals with their passkey; the server recomputes the safeTxHash, checks the signer is an owner and verifies the signature on chain before storing it | API check (wrong hash, wrong key and duplicate signatures are rejected); fork test for the signature format |
 | Execution: once the threshold is met, the last signer submits `execTransaction` through their passkey account and Pimlico; the proposal is marked executed only after an `ExecutionSuccess` log | Fork test; not yet sent on live Sepolia |
-| Customer payment page `/pay/<ens-name>`: resolves the store's ENS name to its Safe address and receiving currency, shows the price in yen and JPYC/USDC, pays with the customer's browser wallet (ERC-20 `transfer`), and shows 処理中 then 済 | vitest for price parsing and conversion; page render check; not yet paid from a real wallet |
+| Customer payment page `/pay/<ens-name>`: resolves the store's ENS name to its Safe address and receiving currency, shows the price in yen and JPYC/USDC, pays with the customer's browser wallet (ERC-20 `transfer`, or a Uniswap v4 swap when the customer pays in the other currency, delivered straight to the store Safe), and shows 処理中 then 済 | vitest for price parsing and conversion; page render check; not yet paid from a real wallet |
 | Price-tag page `/pay`: builds the payment URL and a printable QR code | Page render check |
 | Business and my page screens (logout works) | Manual check |
 
@@ -84,7 +86,7 @@ The 13 Sepolia fork tests cover: contracts exist; Safe creation; a passkey-signe
 | Japanese and English via Paraglide (cookie, then browser language, then ja) and a shadcn sidebar | Manual check |
 | ENS: a label field on store creation that registers `<label>.<hq>.eth` and writes its records, a retry and currency edit on group settings, and the resolved address and currency on group pages with a warning if ENS and the DB disagree | `svelte-check`; registration code covered by the ENS fork tests |
 
-vitest covers helper logic only: the dashboard's 11 tests cover role rules, member-change helpers and group ordering, and the wallet's 21 tests cover passkey public-key parsing, price-tag URL parsing and conversion, and which proposals a member can sign. Type checks pass for both apps.
+vitest covers helper logic only: the dashboard's 11 tests cover role rules, member-change helpers and group ordering, and the wallet's 37 tests cover passkey public-key parsing, price-tag URL parsing and conversion, swap slippage and approval-step planning, and which proposals a member can sign. Type checks pass for both apps.
 
 ### packages/db
 
@@ -98,12 +100,12 @@ A Docusaurus whitepaper and design docs in Japanese (18 pages) with no open item
 
 以下はすべて Ethereum Sepolia のみで動きます。
 
-- **packages/contracts**：Sepolia の各コントラクト（Safe v1.4.1、Safe4337Module v0.3.0、EntryPoint v0.7、パスキー署名者 v0.2.1、Zodiac Roles v2.1.1、JPYC、USDC）のアドレス確認、グループ用 Safe（モジュールなし）と relayer 用 Safe（Safe4337Module とパスキー署名者を `setup()` 内の MultiSend で作成）の calldata 組み立て、`predictSafeAddress`、SafeOp と SafeTx の EIP-712 ハッシュ、パスキー署名のエンコード、viem のスマートアカウント `toSafePasskeyAccount`、ERC-20 送金とオーナー変更のエンコーダ、キーパーを「HQ Safe への JPYC/USDC `transfer` だけ」に絞る Roles v2 の設定エンコード。ENSv2 の本部の名前の登録・サブネームのレジストリとリゾルバの配置・店舗のサブネーム・レコードの書き込み・Universal Resolver での解決、`execTransaction` のエンコードとパスキー署名の検証も含みます。Sepolia フォークテスト 13 件で確認済み。
+- **packages/contracts**：Sepolia の各コントラクト（Safe v1.4.1、Safe4337Module v0.3.0、EntryPoint v0.7、パスキー署名者 v0.2.1、Zodiac Roles v2.1.1、JPYC、USDC）のアドレス確認、グループ用 Safe（モジュールなし）と relayer 用 Safe（Safe4337Module とパスキー署名者を `setup()` 内の MultiSend で作成）の calldata 組み立て、`predictSafeAddress`、SafeOp と SafeTx の EIP-712 ハッシュ、パスキー署名のエンコード、viem のスマートアカウント `toSafePasskeyAccount`、ERC-20 送金とオーナー変更のエンコーダ、キーパーを「HQ Safe への JPYC/USDC `transfer` だけ」に絞る Roles v2 の設定エンコード。ENSv2 の本部の名前の登録・サブネームのレジストリとリゾルバの配置・店舗のサブネーム・レコードの書き込み・Universal Resolver での解決、`execTransaction` のエンコードとパスキー署名の検証も含みます。Uniswap v4 の見積もり・Permit2・Universal Router での交換・全範囲の流動性の追加も含みます。Sepolia フォークテスト 16 件で確認済み。
 - **Sepolia 上での実行**：テスト用 P-256 鍵で署名した UserOperation を、ウォレットのサーバープロキシ経由で Pimlico の bundler と paymaster に送り、ガス代をスポンサーしてもらった状態で Safe とパスキー署名者を配置しました（上記の tx）。
-- **apps/wallet**：パスキーの登録とログイン（パスキー情報はブラウザの localStorage に保持）、`getSigner` による署名者アドレスの算出、招待リンクからのパスキー登録、Pimlico 経由のガスレスなテスト用 Safe 作成、API キーをサーバー側に置き許可したメソッドだけを転送する `/api/bundler`、所属グループの残高と承認待ちの件数を出すホーム、本部の Safe の提案へのパスキー署名（サーバーがチェーン上で検証）としきい値到達後の実行、ENS の名前で受取先を解決してブラウザウォレットで JPYC か USDC を払う決済ページ `/pay/<ENS 名>` と、値札の QR を作る `/pay`。
+- **apps/wallet**：パスキーの登録とログイン（パスキー情報はブラウザの localStorage に保持）、`getSigner` による署名者アドレスの算出、招待リンクからのパスキー登録、Pimlico 経由のガスレスなテスト用 Safe 作成、API キーをサーバー側に置き許可したメソッドだけを転送する `/api/bundler`、所属グループの残高と承認待ちの件数を出すホーム、本部の Safe の提案へのパスキー署名（サーバーがチェーン上で検証）としきい値到達後の実行、ENS の名前で受取先を解決してブラウザウォレットで JPYC か USDC を払い、受取通貨と違えば Uniswap v4 で交換して店舗の Safe に届ける決済ページ `/pay/<ENS 名>` と、値札の QR を作る `/pay`。
 - **apps/dashboard**：Better Auth のメールとパスワードによるログインと招待制の参加、メンバーの一覧・招待・編集・削除（HQ Safe のオーナーが変わる場合は owner_change の提案を作成）、パスキー追加リンクの発行、グループの一覧・店舗作成・HQ Safe と店舗 Safe の作成・Roles v2 設定の提案、出金提案の一覧・詳細・作成・却下・実行済みへの同期、multicall による残高表示、入金インデクサと Bearer トークンで保護した cron、空状態のブリッジ画面、Paraglide による日英切り替え、店舗の作成時の ENS のサブネームの登録と、グループの画面での解決した受取先と受取通貨の表示。
 - **packages/db**：Drizzle のスキーマとマイグレーション、docker compose のローカル Postgres とローカルの Neon HTTP プロキシ。
-- **テスト**：vitest（dashboard 11 件、wallet 21 件。いずれも補助関数のテスト）とフォークテスト 13 件が通り、両アプリの型チェックも通ります。画面の機能は手動で確認しています。
+- **テスト**：vitest（dashboard 11 件、wallet 37 件。いずれも補助関数のテスト）とフォークテスト 13 件が通り、両アプリの型チェックも通ります。画面の機能は手動で確認しています。
 - **docs**：日本語のホワイトペーパーと設計書（18 ページ、未決事項なし）。
 
 ## Built but not yet run on live Sepolia
@@ -120,7 +122,7 @@ A Docusaurus whitepaper and design docs in Japanese (18 pages) with no open item
 
 The following are designed in `docs/` but are not implemented in this repo.
 
-- **Checkout contract**: payment with a Uniswap v4 swap and a `Paid` event, and the e-ink price tag. Customers pay today with a direct ERC-20 transfer to the store Safe resolved through ENS, so no swap happens.
+- **Checkout contract**: a contract that takes the payment and emits `Paid`, and the e-ink price tag. Today the customer's wallet calls Uniswap's Universal Router directly when a swap is needed.
 - **Receipts**: Semaphore v4 purchase proofs.
 - **Store Safe approvals**: signing store Safe proposals needs HQ owners to sign an HQ Safe message (nested ERC-1271); the approval screen shows these as not signable.
 - **Relayer Safe**: execution currently goes through the last signer's own passkey account instead of a bizzet relayer Safe.
@@ -132,13 +134,37 @@ The following are designed in `docs/` but are not implemented in this repo.
 
 以下は `docs/` で設計済みですが、このリポジトリにはまだ実装していません。
 
-- **Checkout コントラクト**：Uniswap v4 のスワップを伴う支払いと `Paid` イベント、電子ペーパーの値札。いまの客の支払いは、ENS で解決した店舗の Safe への ERC-20 の直接の送金で、交換は行いません。
+- **Checkout コントラクト**：支払いを受けて `Paid` イベントを出すコントラクトと、電子ペーパーの値札。いまは、交換が要るときに客のウォレットが Uniswap の Universal Router を直接呼びます。
 - **レシート**：Semaphore v4 による購入証明。
 - **店舗の Safe の承認**：店舗の Safe の提案への署名には、本部の Owner による本部の Safe のメッセージへの署名（入れ子の ERC-1271）が要り、承認画面では署名できない提案として表示します。
 - **中継用の Safe**：実行は、bizzet の中継用の Safe ではなく、最後に署名したメンバー自身のパスキーのアカウントから送っています。
 - **ウォレットのその他**：返金依頼、パスワード追加リンクの発行。
 - **パスキーのサーバー側検証**（登録時）と、サーバーで検証するウォレットログイン。
 - **運用**：自動ブリッジと CCTP、Gelato キーパーの配置とオンチェーンでの集金実行、セットアップ後に HQ メンバーがパスキーを登録したときのオーナー追加提案の自動作成。
+
+## Uniswap v4 integration
+
+Customers can pay in either JPYC or USDC regardless of which one the store receives. When they differ, the payment page quotes the exact-output amount with V4Quoter, and the customer's wallet sends one Universal Router `V4_SWAP` that pays from the customer via Permit2 and `TAKE`s the output straight to the store's Safe, so the store receives exactly the price in its own currency.
+
+| Code | What it does |
+| --- | --- |
+| `packages/contracts/src/uniswap.ts` | Addresses, pool key, quote, swap and Permit2 encoding, full-range liquidity |
+| `packages/contracts/test/uniswap.ts` | Sepolia fork tests for liquidity and both swap directions |
+| `packages/contracts/scripts/uniswap-liquidity.ts` | Adds full-range liquidity to the Sepolia JPYC/USDC pool |
+| `apps/wallet/src/lib/swap.ts` | Slippage, deadline and approval-step planning on the payment page |
+| `apps/wallet/src/routes/pay/[name]/+page.svelte` | Payment page that offers the swap |
+| `FEEDBACK.md` | Our feedback on building with Uniswap v4 |
+
+The Sepolia JPYC/USDC pool (fee 0.01%, tick spacing 1, no hooks) was initialized at about 150 JPYC per USDC but had no in-range liquidity, so the swap works on live Sepolia only after running `uniswap:liquidity`:
+
+```sh
+LIQUIDITY_PRIVATE_KEY=0x... SEPOLIA_RPC_URL=https://... LIQUIDITY_USDC=20 LIQUIDITY_JPYC=3000 \
+  pnpm --filter @bizzet/contracts uniswap:liquidity
+```
+
+### 日本語
+
+客は、店舗の受取通貨にかかわらず JPYC か USDC で払えます。通貨が違うときは、決済ページが V4Quoter で受け取る量を固定した見積もりを出し、客のウォレットが Universal Router の `V4_SWAP` を1回送ります。客からは Permit2 経由で払い、交換した通貨は `TAKE` で店舗の Safe に直接届くため、店舗は自分の通貨でちょうど価格の分を受け取ります。Sepolia のプールには流動性がなかったため、実際の Sepolia で交換するには `uniswap:liquidity` で流動性を足す必要があります。
 
 ## Architecture
 
@@ -246,10 +272,10 @@ Node.js 20 以上、pnpm 10、Docker が必要です。上のコマンドを順�
 ## Testing
 
 ```sh
-# Sepolia fork tests (13 tests)
+# Sepolia fork tests (16 tests)
 cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnpm test
 
-# vitest from the repo root (dashboard 11, wallet 21)
+# vitest from the repo root (dashboard 11, wallet 37)
 pnpm test
 
 # Dashboard type check
