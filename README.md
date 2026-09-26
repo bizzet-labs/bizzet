@@ -179,6 +179,7 @@ The seeded credentials are for local development only.
 | `WALLET_SESSION_SECRET` | Key that signs session cookies; required in production, dev falls back to a per-process key |
 | `PUBLIC_DASHBOARD_URL` | Dashboard URL used in add-password links (default `http://localhost:5174`) |
 | `PUBLIC_PAY_MOCK_RESOLUTION` | Dev server only: `0xaddress,USDC,name` replaces ENS resolution on the payment page, and the page says so |
+| `DEMO_MODE` | Set to `1` (in both apps) to simulate chain transactions, ENS and passkey signatures for a demo; `pnpm db:seed:demo` seeds an HQ with three members. A banner marks demo mode |
 
 `apps/dashboard/.env`
 
@@ -211,6 +212,9 @@ cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnp
 
 # vitest from the repo root (dashboard 11, wallet 65)
 pnpm test
+
+# Sepolia fork tests from the repo root (needs SEPOLIA_RPC_URL)
+pnpm test:fork
 
 # Dashboard type check
 pnpm --filter @bizzet/dashboard run check

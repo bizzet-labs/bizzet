@@ -179,6 +179,7 @@ pnpm dev         # docs :3000、dashboard :5174、wallet :5175
 | `WALLET_SESSION_SECRET` | セッション cookie に署名する鍵、本番では必須で開発時はプロセスごとの使い捨ての鍵を使用 |
 | `PUBLIC_DASHBOARD_URL` | パスワード追加リンクで使うダッシュボードの URL（既定は `http://localhost:5174`） |
 | `PUBLIC_PAY_MOCK_RESOLUTION` | 開発サーバー専用、`0xaddress,USDC,name` で決済ページの ENS の解決を置き換え、その旨を画面に表示 |
+| `DEMO_MODE` | `1` にすると（両アプリで設定）チェーンへの送信・ENS・パスキーの署名を模擬にしてデモを動かせます。`pnpm db:seed:demo` で本部とメンバー3人を入れます。画面に模擬の帯が出ます |
 
 `apps/dashboard/.env`
 
@@ -208,6 +209,9 @@ ENS_OPERATOR_PRIVATE_KEY=0x... SEPOLIA_RPC_URL=https://... ENS_HQ_LABEL=bizzet \
 ```sh
 # Sepolia フォークテスト（23 件）
 cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnpm test
+
+# リポジトリ直下から Sepolia フォークのテスト（SEPOLIA_RPC_URL が要る）
+pnpm test:fork
 
 # リポジトリのルートから vitest（dashboard 11 件、wallet 65 件）
 pnpm test

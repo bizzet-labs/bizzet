@@ -1,0 +1,32 @@
+# bizzet
+
+> A wallet built for business: passkey sign-in, multi-member (2-of-N) approval on Safe, store receiving addresses published as ENSv2 subnames, and Uniswap v4 swaps at checkout. Built at ETHGlobal Tokyo 2026 (Sept 25–27). Everything runs on Ethereum Sepolia only.
+
+## Start here
+
+- README.md: what was built vs. designed, how each part was verified, architecture, env vars, AI usage.
+- README_JP.md: the same in Japanese.
+- SETUP.md: local setup, env vars, demo mode, tests.
+- docs/docs/status.mdx: per-feature implementation status (built / partial / not built) with the verification method.
+- FEEDBACK.md: developer feedback on integrating Uniswap v4.
+
+## Verification
+
+- `pnpm test`: vitest (dashboard 11, wallet 65).
+- `pnpm test:fork`: 23 Sepolia fork tests in packages/contracts/test (Safe setup, passkey UserOperation, Roles v2, 2-passkey HQ payout, nested store-Safe approval, ENSv2 register/records/resolve, Uniswap v4 liquidity and exact-out swaps). Needs SEPOLIA_RPC_URL.
+- Live Sepolia: one passkey-signed UserOperation via Pimlico deployed a Safe and signer: 0xe1bfcc2134d73fb42c8c8b7e26c7581baeec14ad02d4f0764e610008ab5ca6c4.
+
+## Key code
+
+- packages/contracts/src/ens.ts — ENSv2 Sepolia addresses, HQ registration, subname registry/resolver deployment, records, Universal Resolver lookup.
+- packages/contracts/src/uniswap.ts — V4Quoter quotes, Universal Router exact-out swap delivered to the store Safe, Permit2, full-range liquidity.
+- packages/contracts/src/safe-transaction.ts, user-operation.ts, passkey.ts — SafeTx hashing, nested (ERC-1271) store-Safe signatures, passkey signer encoding.
+- apps/wallet/src/routes/pay/[name] — customer payment page resolved by ENS name, optional Uniswap v4 swap.
+- apps/wallet/src/lib/server/approval-*.ts — passkey approval and execution of payouts, verified on the server.
+- apps/dashboard/src/lib/server/ens.ts, group-safe.ts — store subname registration, Safe configuration and deployment from the operator key.
+- packages/db/src/schema.ts — Postgres schema (Drizzle).
+
+## Honest limits
+
+- ENS setup, Uniswap liquidity and Safe deployment are fork-tested but not yet run on live Sepolia; the demo video uses DEMO_MODE, which simulates chain transactions, ENS and passkey signatures and says so on screen.
+- Not built: Checkout contract, Semaphore receipts, auto-bridge/CCTP, relayer Safe, server-side attestation check at passkey registration.

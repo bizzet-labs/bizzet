@@ -49,6 +49,7 @@ pnpm dev          # docs :3000、ダッシュボード :5174、ウォレット :
 | `PUBLIC_SEPOLIA_RPC_URL` | 任意 | Sepolia の RPC。空なら公開の RPC |
 | `PUBLIC_PASSKEY_RP_ID` | 任意 | パスキーの rpId。空ならページのホスト名 |
 | `PUBLIC_PAY_MOCK_RESOLUTION` | 任意 | dev サーバーでだけ、決済ページの ENS の解決の代わりに使う値（`0xアドレス,USDC,店名`） |
+| `DEMO_MODE` | 任意 | `1` にすると、チェーンへの送信・ENS・パスキーの署名を模擬にしてデモを動かす（ダッシュボードにも同じ変数を設定する） |
 
 `PIMLICO_API_KEY` がないと、パスキーでの送信（出金の実行と Safe の作成）が 500 エラーになります。
 
@@ -79,10 +80,15 @@ LIQUIDITY_PRIVATE_KEY=0x... SEPOLIA_RPC_URL=https://... \
 
 `LIQUIDITY_PRIVATE_KEY` が空なら `ENS_OPERATOR_PRIVATE_KEY` を使い、量は `LIQUIDITY_USDC` と `LIQUIDITY_JPYC` で変えられます。
 
+## デモモード
+
+チェーンや鍵なしで一連の流れを見せるための模擬です。両アプリの `.env` に `DEMO_MODE=1` を設定し、空の DB に `pnpm db:seed:demo` で本部・メンバー3人・本部の Safe・`bizzet.eth` の設定を入れます。ログインは `tanaka@example.com` / `password` で、ウォレットはメンバーを選んでログインします。画面の上に模擬である旨の帯が出ます。
+
 ## テスト
 
 ```sh
 pnpm test                                        # 両アプリの vitest
+pnpm test:fork                                   # Sepolia フォークのテスト（SEPOLIA_RPC_URL が要る）
 pnpm --filter @bizzet/dashboard run check        # ダッシュボードの型チェック
 pnpm --filter @bizzet/wallet run check           # ウォレットの型チェック
 cd packages/contracts && SEPOLIA_RPC_URL=https://sepolia.gateway.tenderly.co pnpm test   # Sepolia フォークのテスト
