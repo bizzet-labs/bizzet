@@ -8,7 +8,7 @@ import {
 import { WebAuthnP256 } from 'ox'
 import type { Address, Hex } from 'viem'
 import { publicClient } from './chain.js'
-import { type StoredPasskey, toCoordinates } from './passkey.js'
+import { RP_ID, type StoredPasskey, toCoordinates } from './passkey.js'
 
 // 仮置き：検証用に、オーナーがこのパスキーの署名者1人・しきい値 1 の Safe を使う。
 // グループの Safe（本部・店舗）は、メンバー管理とバックエンドを決めた時点で置き換える
@@ -60,6 +60,7 @@ export async function toPasskeySafeAccount(passkey: StoredPasskey) {
       const { metadata, signature } = await WebAuthnP256.sign({
         credentialId: passkey.id,
         challenge,
+        rpId: RP_ID,
       })
       return {
         authenticatorData: metadata.authenticatorData,
